@@ -216,15 +216,15 @@ window.LEADERBOARD_DATA = {
    ]
   },
   "pzvmr": {
-   "title": "Zero-Shot Video Moment Retrieval from Frozen Vision-Language Models",
-   "venue": "WACV",
-   "year": 2024,
+   "title": "Prompt-based Zero-shot Video Moment Retrieval",
+   "venue": "ACM Multimedia",
+   "year": 2022,
+   "url": "https://dl.acm.org/doi/10.1145/3503161.3548004",
    "tags": [
     "vmr",
     "training-free",
     "zero-shot"
-   ],
-   "arxiv": "2309.00661"
+   ]
   },
   "ed-vtg": {
    "title": "Enrich and Detect: Video Temporal Grounding with Multimodal LLMs",
@@ -492,6 +492,238 @@ window.LEADERBOARD_DATA = {
    "tags": [
     "vmr"
    ]
+  },
+  "frozen-vlm": {
+   "title": "Zero-Shot Video Moment Retrieval from Frozen Vision-Language Models",
+   "venue": "WACV",
+   "year": 2024,
+   "arxiv": "2309.00661",
+   "tags": [
+    "vmr",
+    "training-free",
+    "zero-shot"
+   ]
+  },
+  "moment-gpt": {
+   "title": "Zero-shot Video Moment Retrieval via Off-the-shelf Multimodal Large Language Models",
+   "venue": "AAAI",
+   "year": 2025,
+   "tags": [
+    "vmr",
+    "training-free",
+    "zero-shot",
+    "vision-llm"
+   ],
+   "arxiv": "2501.07972"
+  },
+  "point-to-span": {
+   "title": "Point to Span: Zero-Shot Moment Retrieval for Navigating Unseen Hour-Long Videos",
+   "venue": "arXiv",
+   "year": 2025,
+   "tags": [
+    "vmr",
+    "training-free",
+    "zero-shot",
+    "long-video"
+   ],
+   "arxiv": "2512.10363"
+  },
+  "markit": {
+   "title": "MarkIt: Training-Free Visual Markers for Precise Video Temporal Grounding",
+   "venue": "arXiv",
+   "year": 2026,
+   "tags": [
+    "vmr",
+    "training-free",
+    "vision-llm"
+   ],
+   "arxiv": "2604.25886"
+  },
+  "t2sgrid": {
+   "title": "T2SGrid: Temporal-to-Spatial Gridification for Video Temporal Grounding",
+   "venue": "CVPR",
+   "year": 2026,
+   "tags": [
+    "vmr",
+    "training-free",
+    "vision-llm",
+    "input-token-optimization",
+    "clip-similarity"
+   ],
+   "arxiv": "2603.06973"
+  },
+  "self-sims": {
+   "title": "Mitigating Modality and Language-Style Gaps for Zero-Shot Video Moment Retrieval",
+   "venue": "ECCV",
+   "year": 2026,
+   "tags": [
+    "vmr",
+    "training-free",
+    "zero-shot"
+   ],
+   "arxiv": "2607.19027"
+  },
+  "semvid": {
+   "title": "Keeping the Evidence Chain: Semantic Evidence Allocation for Training-Free Token Pruning in Video Temporal Grounding",
+   "venue": "ECCV",
+   "year": 2026,
+   "tags": [
+    "vmr",
+    "training-free",
+    "vision-llm",
+    "input-token-optimization"
+   ],
+   "arxiv": "2603.05663"
+  },
+  "hitea": {
+   "title": "HiTeA: Hierarchical Temporal Alignment for Training-Free Long-Video Temporal Grounding",
+   "venue": "ICLR",
+   "year": 2026,
+   "tags": [
+    "vmr",
+    "training-free",
+    "long-video"
+   ],
+   "url": "https://openreview.net/forum?id=vIecIscDJf"
+  },
+  "zs-blip": {
+   "title": "Zero-Shot Video Moment Retrieval Using BLIP-Based Models",
+   "venue": "ISVC",
+   "year": 2023,
+   "tags": [
+    "vmr",
+    "training-free",
+    "zero-shot"
+   ],
+   "url": "https://link.springer.com/chapter/10.1007/978-3-031-47969-4_13"
+  },
+  "shotdetect": {
+   "title": "Zero-shot Video Moment Retrieval With Off-the-Shelf Models",
+   "venue": "NeurIPS-Workshop",
+   "year": 2022,
+   "tags": [
+    "vmr",
+    "training-free",
+    "zero-shot"
+   ],
+   "arxiv": "2211.02178"
+  },
+  "diffusionvmr": {
+   "title": "DiffusionVMR: Diffusion Model for Joint Video Moment Retrieval and Highlight Detection",
+   "venue": "arXiv",
+   "year": 2023,
+   "tags": [
+    "vmr",
+    "diffusion"
+   ],
+   "arxiv": "2308.15109"
+  },
+  "td-detr": {
+   "title": "The Devil is in the Spurious Correlations: Boosting Moment Retrieval with Dynamic Learning",
+   "venue": "arXiv",
+   "year": 2024,
+   "tags": [
+    "vmr",
+    "detr"
+   ],
+   "arxiv": "2501.07305"
+  },
+  "vlg-net": {
+   "title": "VLG-Net: Video-Language Graph Matching Network for Video Grounding",
+   "venue": "arXiv",
+   "year": 2020,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2011.10132"
+  },
+  "timeexpert": {
+   "title": "TimeExpert: An Expert-Guided Video LLM for Video Temporal Grounding",
+   "venue": "arXiv",
+   "year": 2025,
+   "tags": [
+    "vmr",
+    "vision-llm"
+   ],
+   "arxiv": "2508.01699"
+  },
+  "timelens": {
+   "title": "TimeLens: Rethinking Video Temporal Grounding with Multimodal LLMs",
+   "venue": "arXiv",
+   "year": 2025,
+   "tags": [
+    "vmr",
+    "vision-llm"
+   ],
+   "arxiv": "2512.14698"
+  },
+  "hieramamba": {
+   "title": "HieraMamba: Video Temporal Grounding via Hierarchical Anchor-Mamba Pooling",
+   "venue": "arXiv",
+   "year": 2025,
+   "tags": [
+    "vmr",
+    "mamba",
+    "ssm"
+   ],
+   "arxiv": "2510.23043"
+  },
+  "eart": {
+   "title": "Knowing Where to Focus: Event-aware Transformer for Video Grounding",
+   "venue": "ICCV",
+   "year": 2023,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2308.06947"
+  },
+  "scanet": {
+   "title": "SCANet: Scene Complexity Aware Network for Weakly-Supervised Video Moment Retrieval",
+   "venue": "ICCV",
+   "year": 2023,
+   "tags": [
+    "vmr",
+    "weakly-supervised"
+   ],
+   "arxiv": "2310.05241"
+  },
+  "weakly-sup-div": {
+   "title": "Iterative Proposal Refinement for Weakly-Supervised Video Grounding (Diverse Inference)",
+   "venue": "arXiv",
+   "year": 2023,
+   "tags": [
+    "vmr",
+    "weakly-supervised"
+   ],
+   "arxiv": "2503.23181"
+  },
+  "cva": {
+   "title": "CVA: Context-aware Video-text Alignment for Video Temporal Grounding",
+   "venue": "arXiv",
+   "year": 2026,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2603.24934"
+  },
+  "distime": {
+   "title": "How Should Video-LLMs Output Time? An Analysis of Efficient Temporal Grounding Paradigms (DisTime)",
+   "venue": "arXiv",
+   "year": 2026,
+   "tags": [
+    "vmr",
+    "vision-llm"
+   ],
+   "arxiv": "2604.08966"
+  },
+  "g2l": {
+   "title": "G2L: Semantically Aligned and Uniform Video Grounding via Geodesic and Game Theory",
+   "venue": "arXiv",
+   "year": 2023,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2307.14277"
   }
  },
  "benchmarks": [
@@ -701,6 +933,108 @@ window.LEADERBOARD_DATA = {
      },
      "size": "7B",
      "setting": "fine-tuned"
+    },
+    {
+     "method": "moment-gpt",
+     "values": {
+      "r1@0.5": 58.3,
+      "r1@0.7": 37.7,
+      "map@0.5": 55.1,
+      "map-avg": 35.0
+     },
+     "setting": "zero-shot",
+     "name": "Moment-GPT (ZS)"
+    },
+    {
+     "method": "self-sims",
+     "values": {
+      "r1@0.5": 59.7,
+      "r1@0.7": 42.2,
+      "map@0.5": 59.2,
+      "map-avg": 38.3
+     },
+     "setting": "zero-shot",
+     "name": "Self-SiMS (ZS)"
+    },
+    {
+     "method": "zs-blip",
+     "values": {
+      "r1@0.5": 52.4,
+      "r1@0.7": 31.6,
+      "map@0.5": 51.7,
+      "map-avg": 29.6
+     },
+     "setting": "zero-shot",
+     "name": "ZS-BLIP (ZS)"
+    },
+    {
+     "method": "shotdetect",
+     "values": {
+      "r1@0.5": 48.33,
+      "r1@0.7": 30.96,
+      "map@0.5": 46.94,
+      "map@0.75": 25.75,
+      "map-avg": 27.96
+     },
+     "setting": "zero-shot",
+     "name": "ShotDetect+CLIP+Rerank (ZS)"
+    },
+    {
+     "method": "shotdetect",
+     "values": {
+      "r1@0.5": 40.24,
+      "r1@0.7": 25.94,
+      "map@0.5": 41.74,
+      "map@0.75": 24.11,
+      "map-avg": 24.82
+     },
+     "setting": "zero-shot",
+     "name": "ShotDetect+CLIP (ZS)"
+    },
+    {
+     "method": "diffusionvmr",
+     "values": {
+      "r1@0.5": 62.91,
+      "r1@0.7": 47.08,
+      "map@0.5": 63.68,
+      "map@0.75": 43.88,
+      "map-avg": 42.74
+     }
+    },
+    {
+     "method": "cva",
+     "values": {
+      "r1@0.5": 70.05,
+      "r1@0.7": 55.32,
+      "map@0.5": 69.49,
+      "map@0.75": 48.45,
+      "map-avg": 47.49
+     }
+    },
+    {
+     "method": "pzvmr",
+     "values": {
+      "r1@0.5": 14.2,
+      "r1@0.7": 4.9,
+      "map@0.5": 15.7,
+      "map-avg": 4.6
+     },
+     "setting": "zero-shot",
+     "name": "PZVMR (US)",
+     "note": "unsupervised"
+    },
+    {
+     "method": "td-detr",
+     "values": {
+      "r1@0.5": 71.29,
+      "r1@0.7": 57.23,
+      "map@0.5": 72.99,
+      "map@0.75": 54.94,
+      "map-avg": 53.23
+     },
+     "setting": "fine-tuned",
+     "name": "TD-DETR",
+     "note": "val split"
     }
    ]
   },
@@ -1061,6 +1395,192 @@ window.LEADERBOARD_DATA = {
      },
      "size": "7B",
      "setting": "zero-shot"
+    },
+    {
+     "method": "moment-gpt",
+     "values": {
+      "r@0.3": 58.2,
+      "r@0.5": 38.4,
+      "r@0.7": 21.6,
+      "miou": 36.5
+     },
+     "setting": "zero-shot",
+     "name": "Moment-GPT (ZS)"
+    },
+    {
+     "method": "self-sims",
+     "values": {
+      "r@0.3": 62.7,
+      "r@0.5": 39.7,
+      "r@0.7": 21.0,
+      "miou": 41.9
+     },
+     "setting": "zero-shot",
+     "name": "Self-SiMS (ZS)"
+    },
+    {
+     "method": "frozen-vlm",
+     "values": {
+      "r@0.5": 40.3,
+      "r@0.7": 18.2,
+      "miou": 38.2
+     },
+     "setting": "zero-shot",
+     "name": "Frozen VLM (ZS)",
+     "note": "OOD-1 split"
+    },
+    {
+     "method": "markit",
+     "values": {
+      "r@0.3": 62.3,
+      "r@0.5": 38.8,
+      "r@0.7": 16.6,
+      "miou": 41.1
+     },
+     "setting": "zero-shot",
+     "name": "Qwen2-VL-7B + MarkIt (ZS)"
+    },
+    {
+     "method": "markit",
+     "values": {
+      "r@0.3": 65.1,
+      "r@0.5": 43.2,
+      "r@0.7": 21.8,
+      "miou": 43.9
+     },
+     "setting": "fine-tuned",
+     "name": "+ MarkIt-FT"
+    },
+    {
+     "method": "t2sgrid",
+     "values": {
+      "r@0.3": 70.1,
+      "r@0.5": 46.7,
+      "r@0.7": 20.1,
+      "miou": 44.3
+     },
+     "setting": "zero-shot",
+     "name": "Qwen2-VL-7B + T2SGrid (ZS)"
+    },
+    {
+     "method": "t2sgrid",
+     "values": {
+      "r@0.3": 76.8,
+      "r@0.5": 60.6,
+      "r@0.7": 35.9,
+      "miou": 53.2
+     },
+     "setting": "fine-tuned",
+     "name": "+ T2SGrid-FT"
+    },
+    {
+     "method": "semvid",
+     "values": {
+      "r@0.3": 51.96,
+      "r@0.5": 34.73,
+      "r@0.7": 22.18,
+      "miou": 38.49
+     },
+     "setting": "fine-tuned",
+     "name": "SemVID @12.5% tokens",
+     "note": "Qwen3-VL-4B, 12.5% token retention"
+    },
+    {
+     "method": "cva",
+     "values": {
+      "r@0.3": 74.19,
+      "r@0.5": 62.61,
+      "r@0.7": 40.78,
+      "miou": 53.35
+     },
+     "setting": "fine-tuned"
+    },
+    {
+     "method": "diffusionvmr",
+     "values": {
+      "r@0.5": 57.74,
+      "r@0.7": 37.23
+     },
+     "setting": "fine-tuned",
+     "note": "VGG features"
+    },
+    {
+     "method": "timeexpert",
+     "values": {
+      "r@0.5": 64.1,
+      "r@0.7": 43.3
+     },
+     "setting": "fine-tuned",
+     "note": "R@1@IoU=0.5/0.7"
+    },
+    {
+     "method": "timelens",
+     "values": {
+      "r@0.3": 70.7,
+      "r@0.5": 39.8,
+      "r@0.7": 14.5,
+      "miou": 42.3
+     },
+     "setting": "fine-tuned",
+     "name": "TimeLens-7B"
+    },
+    {
+     "method": "eart",
+     "values": {
+      "r@0.5": 68.47,
+      "r@0.7": 44.92
+     },
+     "setting": "fine-tuned",
+     "name": "EaTR"
+    },
+    {
+     "method": "td-detr",
+     "values": {
+      "r@0.5": 73.49,
+      "r@0.7": 53.01
+     },
+     "setting": "fine-tuned"
+    },
+    {
+     "method": "scanet",
+     "values": {
+      "r@0.3": 68.04,
+      "r@0.5": 50.85,
+      "r@0.7": 24.07
+     },
+     "setting": "weakly-supervised",
+     "name": "SCANet"
+    },
+    {
+     "method": "weakly-sup-div",
+     "values": {
+      "r@0.3": 69.32,
+      "r@0.5": 51.39,
+      "r@0.7": 25.9,
+      "miou": 45.95
+     },
+     "setting": "weakly-supervised",
+     "name": "Weak-Sup Diverse Inference"
+    },
+    {
+     "method": "distime",
+     "values": {
+      "r@0.5": 60.3,
+      "r@0.7": 30.8,
+      "miou": 53.1
+     },
+     "setting": "fine-tuned",
+     "name": "DisTime (InternVL2.5-8B)"
+    },
+    {
+     "method": "g2l",
+     "values": {
+      "r@0.5": 47.91,
+      "r@0.7": 28.42
+     },
+     "setting": "fine-tuned",
+     "name": "G2L",
+     "note": "VGG features"
     }
    ]
   },
@@ -1320,6 +1840,126 @@ window.LEADERBOARD_DATA = {
      },
      "size": "7B",
      "setting": "zero-shot"
+    },
+    {
+     "method": "moment-gpt",
+     "values": {
+      "r@0.3": 48.1,
+      "r@0.5": 31.1,
+      "r@0.7": 14.9,
+      "miou": 30.8
+     },
+     "setting": "zero-shot",
+     "name": "Moment-GPT (ZS)"
+    },
+    {
+     "method": "self-sims",
+     "values": {
+      "r@0.3": 49.9,
+      "r@0.5": 28.2,
+      "r@0.7": 13.8,
+      "miou": 34.7
+     },
+     "setting": "zero-shot",
+     "name": "Self-SiMS (ZS)"
+    },
+    {
+     "method": "frozen-vlm",
+     "values": {
+      "r@0.5": 18.4,
+      "r@0.7": 6.8,
+      "miou": 21.1
+     },
+     "setting": "zero-shot",
+     "name": "Frozen VLM (ZS)",
+     "note": "OOD-1 split"
+    },
+    {
+     "method": "markit",
+     "values": {
+      "r@0.3": 47.7,
+      "r@0.5": 28.1,
+      "r@0.7": 16.0,
+      "miou": 33.3
+     },
+     "setting": "zero-shot",
+     "name": "Qwen2-VL-7B + MarkIt (ZS)"
+    },
+    {
+     "method": "markit",
+     "values": {
+      "r@0.3": 59.1,
+      "r@0.5": 39.6,
+      "r@0.7": 22.1,
+      "miou": 40.1
+     },
+     "setting": "fine-tuned",
+     "name": "+ MarkIt-FT"
+    },
+    {
+     "method": "t2sgrid",
+     "values": {
+      "r@0.3": 46.2,
+      "r@0.5": 27.2,
+      "r@0.7": 15.4,
+      "miou": 33.3
+     },
+     "setting": "zero-shot",
+     "name": "Qwen2-VL-7B + T2SGrid (ZS)"
+    },
+    {
+     "method": "t2sgrid",
+     "values": {
+      "r@0.3": 64.4,
+      "r@0.5": 48.4,
+      "r@0.7": 29.5,
+      "miou": 46.7
+     },
+     "setting": "fine-tuned",
+     "name": "+ T2SGrid-FT"
+    },
+    {
+     "method": "semvid",
+     "values": {
+      "r@0.3": 74.17,
+      "r@0.5": 56.91,
+      "r@0.7": 30.67,
+      "miou": 49.89
+     },
+     "setting": "fine-tuned",
+     "name": "SemVID @12.5% tokens",
+     "note": "Qwen3-VL-4B, 12.5% token retention"
+    },
+    {
+     "method": "timelens",
+     "values": {
+      "r@0.3": 53.5,
+      "r@0.5": 35.2,
+      "r@0.7": 19.7,
+      "miou": 37.7
+     },
+     "setting": "fine-tuned",
+     "name": "TimeLens-7B"
+    },
+    {
+     "method": "eart",
+     "values": {
+      "r@0.5": 58.18,
+      "r@0.7": 37.64
+     },
+     "setting": "fine-tuned",
+     "name": "EaTR"
+    },
+    {
+     "method": "weakly-sup-div",
+     "values": {
+      "r@0.3": 55.89,
+      "r@0.5": 30.3,
+      "r@0.7": 12.38,
+      "miou": 37.11
+     },
+     "setting": "weakly-supervised",
+     "name": "Weak-Sup Diverse Inference"
     }
    ]
   },
@@ -1517,6 +2157,35 @@ window.LEADERBOARD_DATA = {
      },
      "size": "7B",
      "setting": "fine-tuned"
+    },
+    {
+     "method": "cva",
+     "values": {
+      "r@0.3": 58.8,
+      "r@0.5": 43.21,
+      "r@0.7": 27.73,
+      "miou": 41.07
+     },
+     "setting": "fine-tuned"
+    },
+    {
+     "method": "vlg-net",
+     "values": {
+      "r@0.5": 34.19
+     },
+     "setting": "fine-tuned",
+     "name": "VLG-Net",
+     "note": "R@1@IoU=0.5"
+    },
+    {
+     "method": "hieramamba",
+     "values": {
+      "r@0.3": 59.59,
+      "r@0.5": 48.99
+     },
+     "setting": "fine-tuned",
+     "name": "HieraMamba",
+     "note": "R1 metrics"
     }
    ]
   },
@@ -1655,6 +2324,109 @@ window.LEADERBOARD_DATA = {
      },
      "size": "7B",
      "setting": "zero-shot"
+    },
+    {
+     "method": "hieramamba",
+     "values": {
+      "r@0.3": 18.81,
+      "r@0.5": 13.04
+     },
+     "setting": "fine-tuned",
+     "name": "HieraMamba",
+     "note": "R1 metrics"
+    }
+   ]
+  },
+  {
+   "id": "long-video",
+   "name": "Long video (MAD · MomentSeeker)",
+   "task": "Temporal sentence grounding (long video)",
+   "split": "test",
+   "dataset": {
+    "name": "MAD / MomentSeeker",
+    "title": "Point to Span: Zero-Shot Moment Retrieval for Navigating Unseen Hour-Long Videos",
+    "venue": "arXiv 2025",
+    "arxiv": "2512.10363",
+    "year": 2025
+   },
+   "metrics": [
+    {
+     "id": "r1@0.1",
+     "label": "R1@0.1",
+     "group": "Recall",
+     "primary": true
+    },
+    {
+     "id": "r1@0.3",
+     "label": "R1@0.3",
+     "group": "Recall"
+    },
+    {
+     "id": "r1@0.5",
+     "label": "R1@0.5",
+     "group": "Recall"
+    },
+    {
+     "id": "avg",
+     "label": "Avg (R1,R5)",
+     "group": "Overall"
+    }
+   ],
+   "rows": [
+    {
+     "method": "point-to-span",
+     "values": {
+      "r1@0.1": 49.3,
+      "r1@0.3": 30.8,
+      "r1@0.5": 19.5,
+      "avg": 39.3
+     },
+     "setting": "zero-shot",
+     "name": "Point to Span (MomentSeeker)"
+    },
+    {
+     "method": "point-to-span",
+     "values": {
+      "r1@0.1": 13.5,
+      "r1@0.3": 9.3,
+      "r1@0.5": 5.8,
+      "avg": 14.5
+     },
+     "setting": "zero-shot",
+     "name": "Point to Span (MAD)"
+    },
+    {
+     "method": "moment-detr",
+     "values": {
+      "r1@0.1": 13.2,
+      "r1@0.3": 9.3,
+      "r1@0.5": 5.7,
+      "avg": 16.5
+     },
+     "setting": "fine-tuned",
+     "name": "M-DETR (MomentSeeker)"
+    },
+    {
+     "method": "moment-detr",
+     "values": {
+      "r1@0.1": 3.6,
+      "r1@0.3": 2.8,
+      "r1@0.5": 1.7,
+      "avg": 6.1
+     },
+     "setting": "fine-tuned",
+     "name": "M-DETR (MAD)"
+    },
+    {
+     "method": "vslnet",
+     "values": {
+      "r1@0.1": 6.6,
+      "r1@0.3": 3.1,
+      "r1@0.5": 1.5,
+      "avg": 6.9
+     },
+     "setting": "fine-tuned",
+     "name": "CLIP (MAD)"
     }
    ]
   }

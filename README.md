@@ -38,18 +38,22 @@ python3 -m http.server 8080        # then open http://localhost:8080
 
 ## Benchmarks & data
 
-Five benchmarks, **51 methods**, 101 reported results as of 2026-08-16:
+**Six benchmarks, 73 methods, 148 reported results** as of 2026-08-16:
 
 - **QVHighlights** (test) — MR R1@0.5/0.7 + HD mAP
 - **Charades-STA** (test) — R@0.3/0.5/0.7, mIoU
 - **ActivityNet-Captions** (val_2) — R@0.3/0.5/0.7, mIoU
 - **TACoS** (test) — R@0.3/0.5/0.7, mIoU
 - **Ego4D-NLQ** (val) — R@0.3/0.5/0.7, mIoU
+- **Long video (MAD · MomentSeeker)** (test) — R1@0.1/0.3/0.5, Avg
 
 Numbers are as reported in the papers. Seed data came from the Obsidian
 research vault paper library plus the primary papers (VideoMind, R2-Tuning,
-TFVTG, TAG, ED-VTG, Moment Quantization, LD-DETR, UniTime, OmniVTG,
-GroundVTS, UniVTG, …), each row linking back to its paper.
+TFVTG, TAG, Moment-GPT, Self-SiMS, MarkIt, T2SGrid, SemVID, ShotDetect,
+ED-VTG, Moment Quantization, LD-DETR, UniTime, OmniVTG, CVA, GroundVTS,
+UniVTG, …), each row linking back to its paper. The full zero-shot /
+training-free VMR family from the library is covered, plus the
+training-free token-pruning line.
 
 ## Tags
 

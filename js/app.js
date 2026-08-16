@@ -25,7 +25,14 @@
     "chatvtg": "ChatVTG", "videochat-tpo": "VideoChat-TPO", "et-chat": "E.T. Chat",
     "videochat": "VideoChat", "video-llama": "Video-LLaMA",
     "video-chatgpt": "Video-ChatGPT", "valley": "Valley", "videochat2": "VideoChat2",
-    "xml": "XML", "unloc": "UnLoc"
+    "xml": "XML", "unloc": "UnLoc",
+    "moment-gpt": "Moment-GPT", "point-to-span": "Point to Span", "markit": "MarkIt",
+    "t2sgrid": "T2SGrid", "self-sims": "Self-SiMS", "semvid": "SemVID",
+    "hitea": "HiTeA", "zs-blip": "ZS-BLIP", "shotdetect": "ShotDetect",
+    "diffusionvmr": "DiffusionVMR", "td-detr": "TD-DETR", "vlg-net": "VLG-Net",
+    "timeexpert": "TimeExpert", "timelens": "TimeLens", "hieramamba": "HieraMamba",
+    "eart": "EaTR", "scanet": "SCANet", "weakly-sup-div": "Weak-Sup Div.",
+    "cva": "CVA", "distime": "DisTime", "g2l": "G2L", "frozen-vlm": "Frozen VLM"
   };
 
   const fmt = (n) => n.toFixed(1);
@@ -44,9 +51,14 @@
     "input-token-optimization": "token-opt",
     "codebook": "codebook",
     "survey": "survey",
+    "weakly-supervised": "weak-sup",
+    "long-video": "long-video",
+    "mamba": "Mamba",
+    "ssm": "SSM",
   };
   const TAG_ORDER = ["training-free", "zero-shot", "vision-llm", "detr", "diffusion", "rl",
-    "clip-similarity", "video-retrieval", "input-token-optimization", "codebook", "survey", "vmr"];
+    "clip-similarity", "video-retrieval", "input-token-optimization", "codebook", "survey",
+    "weakly-supervised", "long-video", "mamba", "ssm", "vmr"];
 
   function methodTags(methodId) {
     const m = DATA.methods[methodId];
@@ -551,16 +563,22 @@
 
         <h2>Sources</h2>
         <p>
-          Seed data was compiled from the research paper library and from the
-          primary papers listed below — every row on the benchmark pages links
-          back to its paper:
+          Seed data was compiled from the research paper library (Library/Paper)
+          and the primary papers listed below — every row on the benchmark pages
+          links back to its paper. Methods whose notes carry the library's
+          <code>topic/*</code> tags are included here (training-free, zero-shot,
+          Vision-LLM, DETR, diffusion, RL, …), covering the zero-shot VMR family
+          (Moment-GPT, Self-SiMS, ShotDetect, TAG, TFVTG, VTG-GPT, …) and the
+          training-free token-pruning line (MarkIt, T2SGrid, SemVID, GroundVTS).
         </p>
         <ul>
           <li>VideoMind — <a href="https://github.com/yeliudev/VideoMind/blob/main/docs/BENCHMARK.md" target="_blank" rel="noopener">benchmark tables</a> (arXiv:2503.13444)</li>
           <li>R2-Tuning — <a href="https://arxiv.org/abs/2404.00801" target="_blank" rel="noopener">arXiv:2404.00801</a>, Table 2</li>
-          <li>TFVTG (arXiv:2408.16219) · TAG (arXiv:2508.07925) · ED-VTG (arXiv:2510.17023)</li>
-          <li>Moment Quantization (arXiv:2504.02286) · LD-DETR (arXiv:2501.10787) · UniTime (arXiv:2506.18883)</li>
+          <li>TFVTG (arXiv:2408.16219) · TAG (arXiv:2508.07925) · Moment-GPT (arXiv:2501.07972) · Self-SiMS (arXiv:2607.19027)</li>
+          <li>MarkIt (arXiv:2604.25886) · T2SGrid (arXiv:2603.06973) · SemVID (arXiv:2603.05663) · ShotDetect (arXiv:2211.02178)</li>
+          <li>Moment Quantization (arXiv:2504.02286) · LD-DETR (arXiv:2501.10787) · UniTime (arXiv:2506.18883) · CVA (arXiv:2603.24934)</li>
           <li>OmniVTG (arXiv:2604.25276) · GroundVTS (arXiv:2604.02093) · UniVTG (arXiv:2307.16715)</li>
+          <li>Point to Span (arXiv:2512.10363) · HiTeA (ICLR 2026, OpenReview) · PZVMR (ACM MM 2022)</li>
         </ul>
       </div>`;
     window.scrollTo(0, 0);
