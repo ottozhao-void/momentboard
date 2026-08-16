@@ -8,15 +8,28 @@ hard-won lessons from building and extending it.
 
 # Data Sources & Paper Inventory
 
-## Paper inventory comes from the Obsidian vault, not web search
+## Paper inventory comes from multiple channels, not a single source
 
-- The authoritative paper inventory is the user's Obsidian vault: `Library/Paper/*.md`.
-  Every note starting with `Paper - ` is a paper note and is in scope.
+- The paper inventory is NOT limited to one place. Papers can come from several
+  channels, including (but not limited to):
+  - the Obsidian research vault (see below),
+  - **daily-paper websites / scanners** (e.g. a future arXiv digest feed that
+    surfaces new VMR/TSG papers to review and add),
+  - venues' own pages, RSS feeds, or any other collection Otto points at.
+- Keep the inventory additive: a paper discovered via any channel should be
+  eligible, provided it is a real, published work with retrievable numbers.
+- Web/arXiv is for retrieving numbers, not for deciding what is in scope.
+
+## Obsidian vault notes: `Paper - ` prefix anywhere, not just Library/Paper
+
+- In the Obsidian vault, every paper note starts with `Paper - ` (e.g.
+  `Paper - TFVTG ...`). This prefix is the reliable marker of a paper note.
+- **Notes are NOT guaranteed to live in `Library/Paper/`.** They may sit in other
+  folders, so when scanning the vault, search the whole vault for the `Paper - `
+  prefix rather than assuming a single folder path.
 - Access the vault over the Tailscale bridge (Obsidian Local REST API), bulk-download
-  notes, and parse frontmatter (`tags`, `publication-venue`, `publication-year`,
-  `paper-url`, `code-url`, `aliases`).
-- **Do NOT treat web search as the paper source.** The vault is the ground truth for
-  what to include; web/arXiv is only for retrieving numbers.
+  the matching notes, and parse frontmatter (`tags`, `publication-venue`,
+  `publication-year`, `paper-url`, `code-url`, `aliases`).
 
 ## Papers are NOT only on arXiv — always check the venue's own platform
 
@@ -38,77 +51,5 @@ hard-won lessons from building and extending it.
   `topic/*` tags. Match on keywords across the title, aliases, AND tags, e.g.:
   `moment retrieval | temporal grounding | moment localization | highlight detection |
   video grounding | VMR | VTG | temporal-aware | gridification`.
-- Keyword hits (title+alias+tags) over the whole `Library/Paper` folder is the correct
-  candidate set, not the `topic/vmr` tag subset.
-
-# Extraction Pipeline (numbers from the primary papers)
-
-## Numbers must come from the primary papers, not library PDFs
-
-- Per user instruction: "直接arxiv就行" — take numbers from the paper's own tables on
-  arXiv/OpenReview/venue HTML, **not** from the personal-library PDFs in the vault.
-- Workflow: resolve arXiv ID from frontmatter `paper-url` → download
-  `https://arxiv.org/html/<id>` (fallback `ar5iv.labs.arxiv.org/html/<id>`) →
-  parse tables with the local `html.parser`-based extractor → review by eye before
-  committing numbers to `js/data.js`.
-
-## Table parsing fails often — always have fallbacks
-
-- Expect ~40% of papers to NOT auto-parse (tables rendered as images / other markup /
-  prose numbers). Do not treat a failed parse as "skip the paper."
-- Fallbacks, in order: (1) `fetch_content` mode=answer on `arxiv.org/html/<id>`,
-  (2) ar5iv HTML, (3) grep the raw HTML text for benchmark keywords
-  (`Charades`, `QVHigh`, `ActivityNet`, `R1@0.5`, `mIoU`) and read the surrounding prose,
-  (4) the venue page (OpenReview/ACM/Springer) when no arXiv exists.
-- After the extraction pass, produce a **coverage report**: every candidate paper must be
-  either (a) given rows, (b) given a method entry with tags, or (c) explicitly listed as
-  "no public numbers" with the reason. No silent drops.
-
-## Verify arXiv IDs before use — fuzzy matches can be wrong
-
-- Resolving IDs by fuzzy/query matching can map the wrong paper (e.g. `2309.00661` was
-  assigned to PZVMR but actually belongs to a different paper, "Zero-Shot VMR from Frozen
-  VLM", WACV 2024). Always confirm the resolved ID's title matches the note's title.
-- Split distinct papers into distinct method IDs even when one is a baseline of the other.
-- Prefer the exact `paper-url` arXiv ID from frontmatter over query-based resolution.
-
-# Leaderboard Data (js/data.js)
-
-## Schema
-
-- `window.LEADERBOARD_DATA = { updated, methods: {id: {title, venue, year, arxiv|url, tags}},
-  benchmarks: [{id, name, task, split, dataset, metrics, rows: [{method, values, setting?, name?, note?}]}] }`.
-- Benchmarks (IDs): `qvhighlights`, `charades-sta`, `activitynet-captions`, `tacos`,
-  `ego4d-nlq`, and **`long-video`** (MAD · MomentSeeker) for long-video grounding.
-- Display names live in the `METHOD_NAMES` map in `js/app.js` — every new method ID must
-  get an entry there or it renders as its raw id.
-
-## Tags (WebSiting taxonomy from the vault)
-
-- Every method carries the vault's `topic/*` taxonomy as `tags`: `vmr`, `training-free`,
-  `zero-shot`, `vision-llm`, `detr`, `diffusion`, `rl`, `clip-similarity`,
-  `video-retrieval`, `input-token-optimization`, `codebook`, `survey`,
-  `weakly-supervised`, `long-video`, `mamba`, `ssm`, …
-- `TAG_LABELS` and `TAG_ORDER` in `js/app.js` must include every tag used, or it will not
-  be filterable/rendered.
-
-## Completeness is a hard requirement
-
-- The bug that lost the zero-shot/training-free series: only a "priority subset" of
-  papers was hand-reviewed and committed, while the rest sat in a "next steps" backlog.
-  **Never deploy with uncommitted candidates.** After any extension, re-run the
-  vault↔leaderboard cross-reference audit and confirm every relevant note is represented.
-- Every row must link back to its paper (via `arxiv`/`url`); rows with partial metrics
-  (e.g. only R@0.5) are fine — add a `note` explaining the metric/split (e.g. "val split",
-  "OOD-1", "VGG features", "R@1@IoU").
-
-# Validation, Commits & Deployment
-
-- Always run `node tools/validate_data.js` and `node --check js/*.js` before committing.
-- Regenerate `js/data.js` with a single idempotent build script (e.g. `/tmp/build_data*.py`)
-  — avoid repeated in-place appends that create duplicate rows/benchmarks; start from
-  `git show HEAD:js/data.js` for a clean baseline.
-- Commit in small units with the `<type>(<scope>): <subject>` format (e.g.
-  `fix(leaderboard): ...`, `feat(leaderboard): ...`), then push to `main` — GitHub Pages
-  auto-rebuilds. Verify the live site (public GitHub Pages URL) after deploy, not just the
-  local server.
+- The candidate set is keyword hits over all paper notes (by the `Paper - ` prefix
+  across the whole vault, plus any other channel), not the `topic/vmr` tag subset.
