@@ -20,13 +20,16 @@ hard-won lessons from building and extending it.
   eligible, provided it is a real, published work with retrievable numbers.
 - Web/arXiv is for retrieving numbers, not for deciding what is in scope.
 
-## Obsidian vault notes: `Paper - ` prefix anywhere, not just Library/Paper
+## Obsidian vault notes: `Paper - ` title prefix OR `paper` tag
 
-- In the Obsidian vault, every paper note starts with `Paper - ` (e.g.
-  `Paper - TFVTG ...`). This prefix is the reliable marker of a paper note.
+- A note is a **paper note** if EITHER of these holds:
+  - the title contains `Paper - ` (e.g. `Paper - TFVTG ...`), OR
+  - the note's tags include `paper` (e.g. in frontmatter `tags: [paper, topic/vmr, ...]`).
+  Match on the OR of both conditions — do not rely on the prefix alone, since some
+  paper notes carry only the `paper` tag, and vice versa.
 - **Notes are NOT guaranteed to live in `Library/Paper/`.** They may sit in other
-  folders, so when scanning the vault, search the whole vault for the `Paper - `
-  prefix rather than assuming a single folder path.
+  folders, so when scanning the vault, search the whole vault for notes matching
+  either condition rather than assuming a single folder path.
 - Access the vault over the Tailscale bridge (Obsidian Local REST API), bulk-download
   the matching notes, and parse frontmatter (`tags`, `publication-venue`,
   `publication-year`, `paper-url`, `code-url`, `aliases`).
