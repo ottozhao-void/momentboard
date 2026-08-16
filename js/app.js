@@ -137,6 +137,19 @@
 
   window.addEventListener("hashchange", () => { navState(); route(); });
 
+  /* ---------------------------------------------------------- theme toggle */
+
+  const themeToggle = document.getElementById("theme-toggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const root = document.documentElement;
+      const dark = root.getAttribute("data-theme") !== "dark";
+      if (dark) root.setAttribute("data-theme", "dark");
+      else root.removeAttribute("data-theme");
+      try { localStorage.setItem("momentboard-theme", dark ? "dark" : "light"); } catch (e) {}
+    });
+  }
+
   /* ---------------------------------------------------------- home */
 
   function renderHome() {
