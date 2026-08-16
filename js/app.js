@@ -7,18 +7,54 @@
 
   const DATA = window.LEADERBOARD_DATA;
 
+  // display names; falls back to the raw method id in data.js
   const METHOD_NAMES = {
     "2d-tan": "2D-TAN", "vslnet": "VSLNet", "mmn": "MMN",
     "moment-detr": "Moment-DETR", "umt": "UMT", "momentdiff": "MomentDiff",
-    "qd-detr": "QD-DETR", "univtg": "UniVTG", "r2-tuning": "R2-Tuning",
-    "videomind": "VideoMind", "vtime-llm": "VTimeLLM", "timechat": "TimeChat",
-    "momentor": "Momentor", "hawkeye": "HawkEye", "chatvtg": "ChatVTG",
-    "videochat-tpo": "VideoChat-TPO", "et-chat": "E.T. Chat", "xml": "XML",
+    "qd-detr": "QD-DETR", "cg-detr": "CG-DETR", "tr-detr": "TR-DETR",
+    "bam-detr": "BAM-DETR", "ld-detr": "LD-DETR", "sg-detr": "SG-DETR",
+    "univtg": "UniVTG", "r2-tuning": "R2-Tuning", "flashvtg": "FlashVTG",
+    "sds": "SDS-Tuner", "mqvtg": "MQVTG", "augmr": "Aug. MR",
+    "tfvtg": "TFVTG", "tag": "TAG", "vtg-gpt": "VTG-GPT", "luo-zt": "Luo et al.",
+    "pzvmr": "PZVMR", "ed-vtg": "ED-VTG", "unitime": "UniTime",
+    "time-r1": "Time-R1", "omnivtg": "OmniVTG", "groundvts": "GroundVTS",
+    "numpro": "NumPro", "timesuite": "TimeSuite", "trace": "TRACE",
+    "llava-mr": "LLaVA-MR", "mr-blip": "Mr.BLIP", "emb": "EMB", "vdi": "VDI",
+    "snag": "SnAG", "videomind": "VideoMind", "vtime-llm": "VTimeLLM",
+    "timechat": "TimeChat", "momentor": "Momentor", "hawkeye": "HawkEye",
+    "chatvtg": "ChatVTG", "videochat-tpo": "VideoChat-TPO", "et-chat": "E.T. Chat",
     "videochat": "VideoChat", "video-llama": "Video-LLaMA",
-    "video-chatgpt": "Video-ChatGPT", "valley": "Valley"
+    "video-chatgpt": "Video-ChatGPT", "valley": "Valley", "videochat2": "VideoChat2",
+    "xml": "XML", "unloc": "UnLoc"
   };
 
   const fmt = (n) => n.toFixed(1);
+
+  // tag taxonomy mirrors the Obsidian/WebSiting library tags (topic/*)
+  const TAG_LABELS = {
+    "vmr": "VMR",
+    "training-free": "training-free",
+    "zero-shot": "zero-shot",
+    "vision-llm": "Vision-LLM",
+    "detr": "DETR",
+    "diffusion": "diffusion",
+    "rl": "RL",
+    "clip-similarity": "CLIP-sim",
+    "video-retrieval": "video-retrieval",
+    "input-token-optimization": "token-opt",
+    "codebook": "codebook",
+    "survey": "survey",
+  };
+  const TAG_ORDER = ["training-free", "zero-shot", "vision-llm", "detr", "diffusion", "rl",
+    "clip-similarity", "video-retrieval", "input-token-optimization", "codebook", "survey", "vmr"];
+
+  function methodTags(methodId) {
+    const m = DATA.methods[methodId];
+    return m && Array.isArray(m.tags) ? m.tags : [];
+  }
+  function tagChip(tag) {
+    return `<span class="tag topic" data-tag="${esc(tag)}">${esc(TAG_LABELS[tag] || tag)}</span>`;
+  }
   const fmtDate = (iso) => {
     const [y, m, d] = iso.split("-");
     return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m - 1]} ${+d}, ${y}`;
@@ -159,6 +195,12 @@
             <span class="section-note">Ranked by primary metric</span>
           </div>
           <div class="cards">${cards}</div>
+          <div class="taxonomy">
+            <p class="taxonomy-label">Method tags · from the research library taxonomy</p>
+            <p class="taxonomy-tags">${TAG_ORDER.filter((t) => tagCountAll(t) > 0)
+              .map((t) => `<span class="taxonomy-pair"><span class="tag topic">${esc(TAG_LABELS[t] || t)}</span> <span class="taxonomy-n">${tagCountAll(t)}</span></span>`)
+              .join('<span class="taxonomy-sep"></span>')}</p>
+          </div>
         </section>
       </div>`;
     window.scrollTo(0, 0);
@@ -166,6 +208,9 @@
 
   function countMethods() {
     return new Set(DATA.benchmarks.flatMap((b) => b.rows.map((r) => r.method))).size;
+  }
+  function tagCountAll(tag) {
+    return DATA.benchmarks.reduce((n, b) => n + b.rows.filter((r) => methodTags(r.method).includes(tag)).length, 0);
   }
   function countRows() {
     return DATA.benchmarks.reduce((n, b) => n + b.rows.length, 0);
@@ -178,7 +223,7 @@
     if (!bench) return renderHome();
 
     const pm = primaryMetric(bench);
-    const st = state[id] || { sortMetric: pm.id, dir: "desc" };
+    const st = state[id] || { sortMetric: pm.id, dir: "desc", tag: null };
     state[id] = st;
     const metricById = Object.fromEntries(bench.metrics.map((m) => [m.id, m]));
 
@@ -279,6 +324,7 @@
           </div>
           <span class="result-count" id="result-count"></span>
         </section>
+        <section class="tagbar" id="tagbar" aria-label="Filter by tag"></section>
 
         <div class="table-wrap">
           <table class="leaderboard" id="board">
@@ -297,7 +343,10 @@
 
     function drawTable() {
       const term = searchTerm.toLowerCase();
-      const visible = rows.filter((r) => !term || methodName(r).toLowerCase().includes(term));
+      let visible = rows.filter((r) => !term || methodName(r).toLowerCase().includes(term));
+      if (st.tag) {
+        visible = visible.filter((r) => methodTags(r.method).includes(st.tag));
+      }
       // best per metric column, computed on visible rows
       const bestPer = {};
       for (const m of bench.metrics) {
@@ -311,7 +360,12 @@
         const tags = [];
         if (r.size) tags.push(esc(r.size));
         if (r.setting) tags.push(`<span class="tag ${esc(r.setting)}">${esc(r.setting)}</span>`);
-        if (paper) tags.push(`<span class="tag">${esc(paper.venue)} ${paper.year}</span>`);
+        if (paper) tags.push(`<span class="tag venue">${esc(paper.venue)} ${paper.year}</span>`);
+        for (const t of TAG_ORDER) {
+          if (!methodTags(r.method).includes(t)) continue;
+          if (t === "zero-shot" && r.setting === "zero-shot") continue; // already shown as setting
+          tags.push(tagChip(t));
+        }
         const metricCells = bench.metrics.map((m) => {
           const v = r.values[m.id];
           if (v == null) return `<td class="cell-metric empty">—</td>`;
@@ -388,6 +442,35 @@
       drawTable();
     });
 
+    /* ---- tag filter bar ---- */
+    const tagbar = document.getElementById("tagbar");
+    const tagCounts = {};
+    for (const r of bench.rows) {
+      for (const t of methodTags(r.method)) {
+        if (TAG_ORDER.includes(t)) tagCounts[t] = (tagCounts[t] || 0) + 1;
+      }
+    }
+    const present = TAG_ORDER.filter((t) => tagCounts[t]);
+    if (present.length) {
+      const chip = (t, active) =>
+        `<button class="tagchip${active ? " active" : ""}" data-tag="${t || ""}" aria-pressed="${active}">` +
+        `<span class="tagchip-label">${t ? esc(TAG_LABELS[t] || t) : "All"}</span>` +
+        `<span class="tagchip-count">${t ? tagCounts[t] : bench.rows.length}</span></button>`;
+      tagbar.innerHTML = chip("", !st.tag) + present.map((t) => chip(t, st.tag === t)).join("");
+      tagbar.querySelectorAll(".tagchip").forEach((b) => {
+        b.addEventListener("click", () => {
+          st.tag = b.dataset.tag || null;
+          tagbar.querySelectorAll(".tagchip").forEach((x) => {
+            const on = x.dataset.tag === (st.tag || "");
+            x.classList.toggle("active", on && !!st.tag);
+            x.setAttribute("aria-pressed", on && !!st.tag);
+          });
+          if (!st.tag) tagbar.querySelector('.tagchip[data-tag=""]').classList.add("active");
+          drawTable();
+        });
+      });
+    }
+
     /* ---- imported rows ---- */
     const impEl = document.getElementById("imported");
     if (imported.length) {
@@ -430,6 +513,10 @@
           ${benchList}
         </ul>
         <p style="margin-top:12px">
+          Seed rows were added from the papers archived in the research vault
+          (Library/Paper), matching each benchmark's own comparison tables.
+        </p>
+        <p style="margin-top:12px">
           Rows and metric groups follow the original papers: QVHighlights
           reports moment-retrieval recall (R1@0.5 / R1@0.7) and highlight-detection
           mAP; Charades-STA, ActivityNet-Captions, TACoS and Ego4D-NLQ report
@@ -443,6 +530,17 @@
           <li>This board tracks published results, not live submissions.</li>
         </ul>
 
+        <h2>Tags</h2>
+        <p>
+          Every method carries tags from the same taxonomy used in the
+          Obsidian research library (<code>topic/*</code>): <b>training-free</b>,
+          <b>zero-shot</b>, <b>Vision-LLM</b>, <b>DETR</b>, <b>diffusion</b>,
+          <b>RL</b>, <b>CLIP-sim</b>, <b>video-retrieval</b>, <b>token-opt</b>,
+          <b>codebook</b>, <b>survey</b> and <b>VMR</b>. Use the chip bar above
+          each table to filter methods by tag; filters combine with search and
+          column sorting.
+        </p>
+
         <h2>Adding results</h2>
         <p>
           Edit <code>js/data.js</code> (single source of truth), or run the
@@ -452,10 +550,17 @@
         </p>
 
         <h2>Sources</h2>
+        <p>
+          Seed data was compiled from the research paper library and from the
+          primary papers listed below — every row on the benchmark pages links
+          back to its paper:
+        </p>
         <ul>
           <li>VideoMind — <a href="https://github.com/yeliudev/VideoMind/blob/main/docs/BENCHMARK.md" target="_blank" rel="noopener">benchmark tables</a> (arXiv:2503.13444)</li>
           <li>R2-Tuning — <a href="https://arxiv.org/abs/2404.00801" target="_blank" rel="noopener">arXiv:2404.00801</a>, Table 2</li>
-          <li>Per-method papers, linked from each row on the benchmark pages.</li>
+          <li>TFVTG (arXiv:2408.16219) · TAG (arXiv:2508.07925) · ED-VTG (arXiv:2510.17023)</li>
+          <li>Moment Quantization (arXiv:2504.02286) · LD-DETR (arXiv:2501.10787) · UniTime (arXiv:2506.18883)</li>
+          <li>OmniVTG (arXiv:2604.25276) · GroundVTS (arXiv:2604.02093) · UniVTG (arXiv:2307.16715)</li>
         </ul>
       </div>`;
     window.scrollTo(0, 0);

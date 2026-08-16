@@ -38,7 +38,7 @@ python3 -m http.server 8080        # then open http://localhost:8080
 
 ## Benchmarks & data
 
-Five benchmarks, 22 methods, 51 reported results as of 2026-08-16:
+Five benchmarks, **51 methods**, 101 reported results as of 2026-08-16:
 
 - **QVHighlights** (test) — MR R1@0.5/0.7 + HD mAP
 - **Charades-STA** (test) — R@0.3/0.5/0.7, mIoU
@@ -46,9 +46,18 @@ Five benchmarks, 22 methods, 51 reported results as of 2026-08-16:
 - **TACoS** (test) — R@0.3/0.5/0.7, mIoU
 - **Ego4D-NLQ** (val) — R@0.3/0.5/0.7, mIoU
 
-Numbers are as reported in the papers — compiled from the VideoMind benchmark
-tables (`yeliudev/VideoMind`) and R2-Tuning (arXiv:2404.00801, Table 2), with
-per-method papers linked from each row. See the About page for caveats.
+Numbers are as reported in the papers. Seed data came from the Obsidian
+research vault paper library plus the primary papers (VideoMind, R2-Tuning,
+TFVTG, TAG, ED-VTG, Moment Quantization, LD-DETR, UniTime, OmniVTG,
+GroundVTS, UniVTG, …), each row linking back to its paper.
+
+## Tags
+
+Every method carries tags from the WebSiting/research-library taxonomy
+(`topic/*`): training-free, zero-shot, Vision-LLM, DETR, diffusion, RL,
+CLIP-sim, video-retrieval, token-opt, codebook, survey, VMR. Filter any
+benchmark table with the chip bar — tags combine with search and sorting.
+The home page shows the tag distribution across the board.
 
 ## Adding results
 

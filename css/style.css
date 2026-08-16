@@ -832,3 +832,92 @@ tr.row-paper .paper {
 }
 
 .timeline-lg .tick-label.below2 { top: 34px; }
+
+/* ------------------------------------------------------------ tag filter bar */
+
+.tagbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tagchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 99px;
+  padding: 5px 12px 5px 14px;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.tagchip:hover { border-color: var(--accent); color: var(--accent-deep); }
+
+.tagchip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.tagchip-count {
+  font-size: 10px;
+  color: var(--ink-2);
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 1px 7px;
+}
+
+.tagchip.active .tagchip-count { background: rgba(255,255,255,0.22); color: #fff; }
+
+/* topic tags inside method cells */
+.tag.topic {
+  color: var(--ink-2);
+  border-color: var(--line-strong);
+  background: var(--bg-alt);
+}
+.tag.topic { color: var(--ink); }
+.tag.venue { color: var(--ink-3); border-style: solid; }
+
+/* ------------------------------------------------------------ more contrast */
+.tagbar-empty { display: none; }
+
+/* ------------------------------------------------------------ taxonomy (home) */
+
+.taxonomy {
+  margin-top: 48px;
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+}
+
+.taxonomy-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 14px;
+}
+
+.taxonomy-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+.taxonomy-pair { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+
+.taxonomy-n {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-right: 6px;
+}
+
+.taxonomy-sep { color: var(--line-strong); }
