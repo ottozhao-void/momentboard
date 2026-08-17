@@ -753,40 +753,47 @@ td.col-rank .rank-badge.rank-3 { color: var(--ink); background: var(--badge-bg);
 .tag.zero-shot { color: var(--ink-3); border-style: dashed; }
 .tag.fine-tuned { color: var(--accent-deep); border-color: var(--accent-line); background: var(--accent-soft); }
 
-/* inline row actions (open paper · edit · remove/revert) */
-.row-actions {
-  margin-left: auto;
+/* trailing actions rail — icon buttons at the row end, outside the data columns */
+td.col-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: left;
+  padding-left: 12px;
+  padding-right: 16px;
+  border-left: 1px solid var(--line);
+  background: var(--bg-alt);
+}
+
+th.col-actions-th {
+  border-left: 1px solid var(--line);
+  background: var(--bg-alt);
+  width: 1%;
+}
+
+.icon-action {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  flex: none;
-}
-
-.row-actions .row-action {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.03em;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-right: 2px;
   color: var(--ink-2);
-  background: var(--bg);
-  border: 1px solid var(--line-strong);
-  border-radius: 6px;
-  padding: 2px 9px;
-  white-space: nowrap;
-  text-decoration: none;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  vertical-align: middle;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
-.row-actions .row-action:hover {
-  border-color: var(--accent);
+.icon-action:hover {
   color: var(--accent-deep);
   background: var(--accent-soft);
+  border-color: var(--accent-line);
 }
 
-.row-actions .row-action.is-danger:hover {
-  border-color: var(--danger);
+.icon-action.is-danger:hover {
   color: var(--danger);
   background: var(--danger-soft);
+  border-color: var(--danger);
 }
 
 /* metric cells */
@@ -1119,8 +1126,6 @@ td.cell-metric.empty { color: var(--line-strong); }
   background: transparent;
   border: 1.5px dashed var(--accent);
 }
-
-/* (row-action button styling lives with .row-actions above) */
 
 .override-banner {
   border: 1px solid var(--accent-line);

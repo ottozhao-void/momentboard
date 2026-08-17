@@ -78,6 +78,12 @@
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   }[c]));
 
+  // row-action icons (feather-style, stroke matches the theme toggle)
+  const ICON_PAPER = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+  const ICON_EDIT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+  const ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+  const ICON_REVERT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
+
   const $view = document.getElementById("view");
   const state = {}; // benchmarkId -> { sortMetric, dir }
 
@@ -803,6 +809,7 @@
         const sorted = isSort ? " sorted" : "";
         return `<th data-metric="${m.id}" class="${sorted}${gdiv}" aria-sort="${isSort ? (st.dir === "desc" ? "descending" : "ascending") : "none"}">${esc(m.label)}${arrow}</th>`;
       }).join("")}
+      <th class="col-actions-th" aria-label="Row actions"></th>
     </tr>`;
 
     $view.innerHTML = `
@@ -887,28 +894,26 @@
         const rankBadge = rank <= 3
           ? `<span class="rank-badge rank-${rank}">${rank}</span>`
           : `<span class="rank-badge">${rank}</span>`;
-        // inline row actions: open paper · edit · (remove/revert for local rows)
-        const openLink = r.manual
-          ? (() => {
-              const s = String(r.paper || "").trim();
-              const m = s.match(/^(?:arxiv\s*[:#]?\s*)?(\d{4}\.\d{4,5})$/i);
-              if (m) return `<a class="row-action" href="https://arxiv.org/abs/${m[1]}" target="_blank" rel="noopener">open paper</a>`;
-              if (/^https?:\/\//i.test(s)) return `<a class="row-action" href="${esc(s)}" target="_blank" rel="noopener">open paper</a>`;
-              return "";
-            })()
-          : (paper && (paper.arxiv || paper.url))
-            ? `<a class="row-action" href="${esc(paper.arxiv ? "https://arxiv.org/abs/" + paper.arxiv : paper.url)}" target="_blank" rel="noopener">open paper</a>`
-            : "";
-        const actions = [];
-        if (openLink) actions.push(openLink);
+        // trailing actions rail (outside the metric columns): open paper · edit · remove/revert
+        let paperHref = "";
         if (r.manual) {
-          actions.push(`<button type="button" class="row-action" data-edit-manual="${esc(r.method)}">edit</button>`);
-          actions.push(`<button type="button" class="row-action is-danger" data-remove-manual="${esc(r.method)}">remove</button>`);
-        } else {
-          actions.push(`<button type="button" class="row-action" data-edit-override="${esc(rowKey(id, r.method, r.name))}">edit</button>`);
-          if (r.corrected) actions.push(`<button type="button" class="row-action is-danger" data-revert-override="${esc(r.overrideId)}">revert</button>`);
+          const s = String(r.paper || "").trim();
+          const m = s.match(/^(?:arxiv\s*[:#]?\s*)?(\d{4}\.\d{4,5})$/i);
+          if (m) paperHref = "https://arxiv.org/abs/" + m[1];
+          else if (/^https?:\/\//i.test(s)) paperHref = s;
+        } else if (paper && (paper.arxiv || paper.url)) {
+          paperHref = paper.arxiv ? "https://arxiv.org/abs/" + paper.arxiv : paper.url;
         }
-        const actionsHtml = actions.length ? `<span class="row-actions">${actions.join("")}</span>` : "";
+        let acts = paperHref
+          ? `<a class="icon-action" href="${esc(paperHref)}" title="Open paper" aria-label="Open paper" target="_blank" rel="noopener">${ICON_PAPER}</a>`
+          : "";
+        if (r.manual) {
+          acts += `<button type="button" class="icon-action" title="Edit entry" aria-label="Edit entry" data-edit-manual="${esc(r.method)}">${ICON_EDIT}</button>`;
+          acts += `<button type="button" class="icon-action is-danger" title="Remove entry" aria-label="Remove entry" data-remove-manual="${esc(r.method)}">${ICON_TRASH}</button>`;
+        } else {
+          acts += `<button type="button" class="icon-action" title="${r.corrected ? "Edit correction" : "Correct result"}" aria-label="${r.corrected ? "Edit correction" : "Correct result"}" data-edit-override="${esc(rowKey(id, r.method, r.name))}">${ICON_EDIT}</button>`;
+          if (r.corrected) acts += `<button type="button" class="icon-action is-danger" title="Revert to published" aria-label="Revert to published" data-revert-override="${esc(r.overrideId)}">${ICON_REVERT}</button>`;
+        }
         const tip = r.manual ? (r.note || "") : (r.corrected ? (r.correctionNote || "corrected in the UI") : (r.failed ? r.note : ""));
         const nameTip = tip ? ` title="${esc(tip)}"` : "";
         return `
@@ -918,10 +923,10 @@
             <div class="cell-method">
               <span class="method-name"${nameTip}>${esc(methodName(r))}</span>
               <span class="method-tags">${tags.join("")}</span>
-              ${actionsHtml}
             </div>
           </td>
           ${metricCells}
+          <td class="col-actions">${acts}</td>
         </tr>`;
       }).join("");
     }
@@ -1143,12 +1148,13 @@
           and entries stay in this browser until it is reachable again.
         </p>
         <p style="margin-top:12px">
-          <b>Fixing extraction errors</b> — choose <b>edit</b> on a row to
-          correct its scores. The fix is stored as an
-          <em>override</em> on the server, layered on top of the published
-          value and tagged <span class="tag corrected">corrected</span>; use
-          <b>revert</b> to go back to the published number. Manual entries can
-          be edited or removed the same way.
+          <b>Fixing extraction errors</b> — use the <b>pencil icon</b> in the
+          actions rail on the right of a row to correct its scores. The fix is
+          stored as an <em>override</em> on the server, layered on top of the
+          published value and tagged <span class="tag corrected">corrected</span>;
+          the <b>undo icon</b> reverts to the published number. The rail also
+          has an <b>external-link icon</b> to open the paper, and a <b>trash
+          icon</b> to remove manual entries.
         </p>
         <p style="margin-top:12px">
           <b>Where to edit</b> — the board is served by a local server on this
