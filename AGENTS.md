@@ -2,9 +2,9 @@
 
 This project is a static leaderboard frontend (zero-dependency HTML/JS/CSS) that
 compares Video Moment Retrieval (VMR) / Temporal Sentence Grounding (TSG) methods
-across benchmarks. It is deployed on GitHub Pages and sourced from the user's
-Obsidian research vault (City library). These instructions capture the
-hard-won lessons from building and extending it.
+across benchmarks. It is served locally (via SSH port forwarding) and sourced
+from the user's Obsidian research vault (City library). These instructions
+capture the hard-won lessons from building and extending it.
 
 # Data Sources & Paper Inventory
 
@@ -124,8 +124,10 @@ correction of numbers (see README "Adding results"):
 
 - **Add result** creates a `manual` entry; **edit** on any row creates an
   `override` of a published value. Both are stored on the momentboard server
-  (`server/server.js`, Tailscale) in `server/entries.json`, and are layered on
-  top of `data.js` at render time — `data.js` is never rewritten from the UI.
+  (`server/server.js`) in `server/entries.json`, and are layered on top of
+  `data.js` at render time — `data.js` is never rewritten from the UI.
+- The site is accessed via **SSH port forwarding** (`ssh -L 8080:localhost:8080`)
+  — the server binds localhost only, with no LAN/Tailnet/Pages exposure.
 - When the server is unreachable the app falls back to localStorage
   (`momentboard:manual:v2`) and shows `local only` in the toolbar.
 - **Publish corrections:** run `node tools/merge_entries.js` to fold

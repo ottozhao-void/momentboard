@@ -14,8 +14,8 @@
  * Mutations return the full entries array so clients can stay in sync.
  *
  * Env:
- *   PORT          listen port (default 8787)
- *   HOST          bind host (default 0.0.0.0 — Tailscale reachable)
+ *   PORT          listen port (default 8080)
+ *   HOST          bind host (default 127.0.0.1 — reach it via SSH port forwarding)
  *   CORS_ORIGINS  comma-separated allowed origins (default "*")
  *
  * Run:  node server/server.js        (from the repo root)
@@ -29,8 +29,8 @@ const crypto = require("crypto");
 
 const ROOT = path.resolve(__dirname, "..");
 const DATA_FILE = path.join(__dirname, "entries.json");
-const PORT = Number(process.env.PORT || 8787);
-const HOST = process.env.HOST || "0.0.0.0";
+const PORT = Number(process.env.PORT || 8080);
+const HOST = process.env.HOST || "127.0.0.1";
 const CORS_ORIGINS = (process.env.CORS_ORIGINS || "*")
   .split(",").map((s) => s.trim()).filter(Boolean);
 

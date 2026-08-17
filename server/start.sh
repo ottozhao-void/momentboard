@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Start the Momentboard persistence server (static + API) from the repo root.
-# Port defaults to 8787; override with PORT=… ./server/start.sh
+# It binds 127.0.0.1 by default — reach it via SSH port forwarding:
+#   ssh -L 8080:localhost:8080 <host>
+# Port/host override: PORT=9000 HOST=0.0.0.0 ./server/start.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PORT="${PORT:-8787}"
-exec env PORT="$PORT" node server/server.js
+PORT="${PORT:-8080}"
+HOST="${HOST:-127.0.0.1}"
+exec env PORT="$PORT" HOST="$HOST" node server/server.js

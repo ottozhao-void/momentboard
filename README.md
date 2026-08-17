@@ -11,9 +11,10 @@ single editable file, and everything works offline.
 ## Quick start
 
 ```bash
-# from anywhere, either:
-python3 -m http.server 8080        # then open http://localhost:8080
-# or just double-click index.html  (works — no fetch, no build step)
+./server/start.sh            # static + API on http://localhost:8080
+# from any machine with SSH access, forward the port and open the site:
+ssh -L 8080:localhost:8080 <host>    # then open http://localhost:8080
+# or just double-click index.html    (works — no fetch, no build step)
 ```
 
 ## What's inside
@@ -110,18 +111,20 @@ the extractor's generic values still need a human to confirm metric and paper.
 ## Server & persistence
 
 ```bash
-./server/start.sh          # HTTP on 0.0.0.0:8080 (static + API)
+./server/start.sh          # static + API on 127.0.0.1:8080 (localhost only)
 ```
 
 The server persists entries/corrections to `server/entries.json` with atomic
 writes. On this machine it runs as a systemd user service
-(`~/.config/systemd/user/momentboard.service`) and is reachable over
-Tailscale at **https://openclaw.tailda1b50.ts.net/momentboard** (via
-`tailscale serve`). The GitHub Pages copy syncs to it over HTTPS/CORS; when
-it can't be reached (off-network, or Chrome's local-network security blocks
-the public→private call) the app degrades to browser-local storage with a
-status chip in the toolbar. For the full syncing experience, use the tailnet
-URL above as your editing home.
+(`~/.config/systemd/user/momentboard.service`). The server binds localhost
+only and is reached over **SSH port forwarding**:
+
+```bash
+ssh -L 8080:localhost:8080 <host>     # then open http://localhost:8080
+```
+
+Edits sync to the server when it is reachable; otherwise the app degrades to
+browser-local storage with a status chip in the toolbar.
 
 See `server/README.md` for the API and deployment notes.
 

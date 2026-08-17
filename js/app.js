@@ -157,25 +157,21 @@
 
   const MANUAL_KEY = "momentboard:manual:v2";
 
-  // Where the persistence server lives:
-  //   ""   -> same origin: site served by server/server.js on openclaw:8080
-  //           (http://openclaw:8080 or https://openclaw.tailda1b50.ts.net/momentboard)
-  //   https://openclaw.tailda1b50.ts.net/momentboard -> GitHub Pages copy (HTTPS)
-  //   null -> file:// / unknown: local only
-  // Override at any time: window.MOMENTBOARD_API = "http://…";
-  const TAILNET_FQDN = "openclaw.tailda1b50.ts.net";
+  // Access model: the site is served by server/server.js on this machine and
+  // reached via SSH port forwarding (ssh -L 8080:localhost:8080 …), so the API
+  // is always same-origin. API_BASE is only overridden for unusual setups via
+  // window.MOMENTBOARD_API; a non-server origin falls back to local storage.
   const API_BASE = (() => {
     try {
       if (window.MOMENTBOARD_API) return window.MOMENTBOARD_API;
       if (location.protocol === "file:") return null;
-      const local = ["localhost", "127.0.0.1", "::1", "openclaw", TAILNET_FQDN].includes(location.hostname);
-      return local ? "" : "https://" + TAILNET_FQDN + "/momentboard";
+      return ""; // same origin (served by server/server.js)
     } catch (e) { return null; }
   })();
 
   async function apiFetch(path, options) {
     // same-origin (API_BASE === "") uses a RELATIVE path so sub-path hosting
-    // (e.g. /momentboard on the tailnet) resolves correctly; otherwise absolute.
+    // (e.g. behind a reverse proxy) resolves correctly; otherwise absolute.
     const url = API_BASE === "" ? path.replace(/^\/+/, "") : (API_BASE || "") + path;
     const init = Object.assign({ signal: AbortSignal.timeout(3000) }, options || {});
     const res = await fetch(url, init);
@@ -1113,7 +1109,7 @@
           moment retrieval benchmarks. Published scores are as reported by the
           authors of the cited papers — nothing here is re-run or estimated.
           Numbers you enter by hand are tagged
-          <span class="tag manual">manual</span> and sync to your server;
+          <span class="tag manual">manual</span> and sync to the local server;
           corrections of published values are tagged
           <span class="tag corrected">corrected</span>.
         </p>
@@ -1183,23 +1179,22 @@
           be edited or removed the same way.
         </p>
         <p style="margin-top:12px">
-          <b>Where to edit</b> — use the tailnet URL
-          <code>https://openclaw.tailda1b50.ts.net/momentboard</code> (or
-          <code>http://openclaw:8080</code>) for full syncing. The public
-          GitHub Pages copy also syncs when the browser permits it; Chrome's
-          local-network security may block it, in which case the toolbar shows
+          <b>Where to edit</b> — the board is served by a local server on this
+          machine (<code>server/server.js</code>), reached via SSH port
+          forwarding, e.g. <code>ssh -L 8080:localhost:8080 &lt;host&gt;</code>
+          then open <code>http://localhost:8080</code>. There all edits sync to
+          <code>server/entries.json</code>. If the server is unreachable the
+          toolbar shows
           <span class="sync-status"><span class="dot warn"></span>local only</span>
-          and edits stay in that browser.
+          and entries stay in that browser until it is reachable again.
         </p>
         <p style="margin-top:12px">
-          To publish for everyone, run
-          <code>tools/merge_entries.js</code> — it folds server overrides and
-          manual entries back into <code>js/data.js</code>. You can also add a
-          published result directly by editing <code>js/data.js</code> (single
-          source of truth), or run the extraction pipeline in
+          To add a published result directly, edit <code>js/data.js</code>
+          (single source of truth), or run the extraction pipeline in
           <code>benchmark-extractor/</code> and import its
           <code>summary.csv</code> with
-          <code>tools/import_from_extractor.py</code>.
+          <code>tools/import_from_extractor.py</code> — imported rows appear on
+          the benchmark page marked as pending review.
         </p>
 
         <h2>Sources</h2>

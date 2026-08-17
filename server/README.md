@@ -1,23 +1,31 @@
 # Momentboard server
 
 Zero-dependency Node server that serves the static site **and** a REST API for
-manual performance entries and corrections. Run it on the Tailscale node that
-should own the data (this repo's default home is `openclaw`).
+manual performance entries and corrections. It binds **127.0.0.1** by default
+and is meant to be reached over **SSH port forwarding** — nothing is exposed
+on the LAN, Tailnet or internet.
 
-## Run
+## Access
 
 ```bash
-./server/start.sh                 # HTTP on 0.0.0.0:8080 (static + API)
-PORT=9000 ./server/start.sh       # custom port
+# on the machine hosting the repo (here: openclaw):
+./server/start.sh                 # static + API on http://localhost:8080
+
+# from any other machine that can SSH here:
+ssh -L 8080:localhost:8080 <host> # then open http://localhost:8080
 ```
 
-Then open **http://openclaw:8080** (same origin → entries sync here) or, from
-a device on your tailnet, **https://openclaw.tailda1b50.ts.net/momentboard**
-(fronted by `tailscale serve` → local :8080).
+The server is installed here as the user service `momentboard.service`:
 
-The GitHub Pages copy calls the API over HTTPS
-(`https://openclaw.tailda1b50.ts.net/momentboard/api/…`) via CORS, so edits
-made there persist to the same `server/entries.json`.
+```bash
+systemctl --user enable --now momentboard     # already enabled here
+systemctl --user status momentboard
+journalctl --user -u momentboard -f           # logs
+```
+
+The unit file is `server/momentboard.service` (copy to
+`~/.config/systemd/user/` on other hosts; it sets `PORT=8080` and
+`HOST=127.0.0.1`).
 
 ## API
 
@@ -30,21 +38,9 @@ made there persist to the same `server/entries.json`.
 | DELETE | `/api/entries/:id` | remove |
 
 Mutations return the full entries array. Data is written atomically to
-`server/entries.json` (with a `.bak`). Personal tool on your tailnet — no
-auth; restrict with `CORS_ORIGINS` if you expose it publicly.
-
-## Run as a service (on this machine)
-
-Installed as the user service `momentboard.service`:
-
-```bash
-systemctl --user enable --now momentboard     # already enabled here
-systemctl --user status momentboard
-journalctl --user -u momentboard -f           # logs
-```
-
-The unit file is `server/momentboard.service` (copy to
-`~/.config/systemd/user/` on other hosts).
+`server/entries.json` (with a `.bak`). CORS is permissive by default
+(`CORS_ORIGINS` env to restrict) since the server is localhost-only; it is
+unauthenticated — a personal tool behind your SSH tunnel.
 
 ## Publish corrections back to the board
 
