@@ -65,14 +65,7 @@ The home page shows the tag distribution across the board.
 
 ## Adding results
 
-**While reading a paper** — click **Record result** in the header, home
-benchmark section, or any benchmark toolbar. Choose the benchmark, enter the
-method and any available metric values, then save. Entries are marked `manual`
-and stored in this browser's local storage, so they survive reloads without
-changing the published `js/data.js` dataset. Expand a manual row to edit or
-remove it.
-
-**For published board data** — edit `js/data.js` directly:
+**Manually** — edit `js/data.js`:
 
 ```js
 rows: [
