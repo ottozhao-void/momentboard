@@ -20,6 +20,10 @@
           <a href="#/" class="nav-link" data-route="home">Benchmarks</a>
           <a href="#/about" class="nav-link" data-route="about">About &amp; sources</a>
         </nav>
+        <button type="button" class="button-primary header-add" data-open-manual aria-label="Record a manual result">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Record result</span>
+        </button>
         <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle light / dark theme">
           <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -42,6 +46,101 @@
       <p class="footer-meta">Momentboard · temporal sentence grounding · video moment retrieval</p>
     </div>
   </footer>
+
+  <dialog class="entry-dialog" id="manual-entry-modal" aria-modal="true" aria-labelledby="manual-entry-title" aria-describedby="manual-entry-intro">
+    <form class="entry-form" id="manual-entry-form" novalidate>
+      <div class="dialog-head">
+        <div>
+          <p class="dialog-eyebrow">Manual entry</p>
+          <h2 id="manual-entry-title">Record a result</h2>
+        </div>
+        <button type="button" class="dialog-close" id="manual-entry-close" aria-label="Close result form" title="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <p class="dialog-intro" id="manual-entry-intro">Capture a paper’s reported scores while you read. Your entry stays in this browser until you remove it.</p>
+      <div class="dialog-context" id="manual-entry-context" aria-live="polite"></div>
+      <div class="form-error-summary" id="manual-entry-summary" role="alert" hidden></div>
+
+      <div class="entry-fields">
+        <div class="field field-wide">
+          <label for="manual-method">Method name <span class="required-mark">*</span></label>
+          <input id="manual-method" name="method" type="text" maxlength="120" autocomplete="off" placeholder="e.g. MyMethod" aria-describedby="manual-method-help manual-method-error" required>
+          <p class="field-help" id="manual-method-help">Use the name as it appears in the paper.</p>
+          <p class="field-error" id="manual-method-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field">
+          <label for="manual-benchmark">Benchmark <span class="required-mark">*</span></label>
+          <select id="manual-benchmark" name="benchmark" aria-describedby="manual-benchmark-error" required>
+            <option value="">Choose a benchmark…</option>
+          </select>
+          <p class="field-error" id="manual-benchmark-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field">
+          <label for="manual-setting">Setting</label>
+          <select id="manual-setting" name="setting">
+            <option value="">Not specified</option>
+            <option value="fine-tuned">Fine-tuned</option>
+            <option value="zero-shot">Zero-shot</option>
+            <option value="few-shot">Few-shot</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="manual-size">Model size <span class="optional-label">optional</span></label>
+          <input id="manual-size" name="size" type="text" maxlength="24" autocomplete="off" placeholder="e.g. 7B">
+        </div>
+
+        <fieldset class="metric-fieldset field-wide">
+          <legend>Performance</legend>
+          <p class="field-help">Enter the values reported for this benchmark. Leave unavailable metrics blank; at least one value is required.</p>
+          <div class="metric-entry-grid" id="manual-metric-fields"></div>
+          <p class="field-error" id="manual-values-error" aria-live="polite"></p>
+        </fieldset>
+
+        <div class="field field-wide">
+          <label for="manual-paper-title">Paper title <span class="optional-label">optional</span></label>
+          <input id="manual-paper-title" name="paperTitle" type="text" maxlength="240" autocomplete="off" placeholder="The title from the paper">
+        </div>
+
+        <div class="field">
+          <label for="manual-venue">Venue <span class="optional-label">optional</span></label>
+          <input id="manual-venue" name="venue" type="text" maxlength="80" autocomplete="off" placeholder="e.g. CVPR 2025">
+        </div>
+
+        <div class="field">
+          <label for="manual-year">Year <span class="optional-label">optional</span></label>
+          <input id="manual-year" name="year" type="number" min="1900" max="2100" step="1" inputmode="numeric" placeholder="2025" aria-describedby="manual-year-error">
+          <p class="field-error" id="manual-year-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field field-wide">
+          <label for="manual-source-url">Paper or source URL <span class="optional-label">optional</span></label>
+          <input id="manual-source-url" name="sourceUrl" type="url" maxlength="500" inputmode="url" autocomplete="url" placeholder="https://…" aria-describedby="manual-source-url-help manual-source-url-error">
+          <p class="field-help" id="manual-source-url-help">Only http:// and https:// links are stored.</p>
+          <p class="field-error" id="manual-source-url-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field field-wide">
+          <label for="manual-notes">Notes <span class="optional-label">optional</span></label>
+          <textarea id="manual-notes" name="notes" rows="3" maxlength="500" placeholder="Evaluation setting, backbone, or table reference…"></textarea>
+        </div>
+      </div>
+
+      <div class="dialog-footer">
+        <span class="dialog-footnote">Stored locally · not part of the published dataset</span>
+        <div class="dialog-actions">
+          <button type="button" class="button-secondary" id="manual-entry-cancel">Cancel</button>
+          <button type="submit" class="button-primary" id="manual-entry-save">Save result</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <script>
     /* Apply saved theme before first paint to avoid a flash of the wrong mode. */

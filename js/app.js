@@ -104,7 +104,7 @@
     let leaders = {};
     for (const b of DATA.benchmarks) {
       const pm = primaryMetric(b);
-      const best = b.rows.reduce((acc, r) =>
+      const best = rowsForBenchmark(b).reduce((acc, r) =>
         (r.values[pm.id] != null && r.values[pm.id] > (acc ? acc.values[pm.id] : -1) ? r : acc), null);
       leaders[b.id] = { row: best, bench: b, metric: pm };
     }
@@ -114,9 +114,334 @@
   function paperLink(p) {
     if (!p) return "";
     const id = p.arxiv ? `arXiv:${p.arxiv}` : "";
-    const venue = p.venue ? `${p.venue} ${p.year}`.trim() : String(p.year || "");
+    const venue = p.venue ? `${p.venue} ${p.year || ""}`.trim() : String(p.year || "");
     const bits = [venue, id].filter(Boolean);
     return bits.join(" · ");
+  }
+
+  function paperSourceLink(p) {
+    if (!p) return "";
+    if (p.arxiv) return `<a href="https://arxiv.org/abs/${esc(p.arxiv)}" target="_blank" rel="noopener">open paper ↗</a>`;
+    const url = safeHttpUrl(p.url);
+    return url ? `<a href="${esc(url)}" target="_blank" rel="noopener">open source ↗</a>` : "";
+  }
+
+  const MANUAL_STORAGE_KEY = "momentboard-manual-results";
+  let manualReturnFocus = null;
+  let manualEditingId = null;
+  let toastTimer = null;
+
+  function safeHttpUrl(raw) {
+    if (!raw || typeof raw !== "string") return "";
+    try {
+      const url = new URL(raw.trim());
+      return url.protocol === "http:" || url.protocol === "https:" ? url.href : "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function readManualEntries() {
+    try {
+      const raw = localStorage.getItem(MANUAL_STORAGE_KEY);
+      const entries = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(entries)) return [];
+      return entries.filter((entry) => entry && typeof entry.id === "string" &&
+        typeof entry.benchmark === "string" && typeof entry.name === "string" &&
+        entry.name.trim() && entry.values && typeof entry.values === "object");
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function writeManualEntries(entries) {
+    try {
+      localStorage.setItem(MANUAL_STORAGE_KEY, JSON.stringify(entries));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function methodSlug(name) {
+    const slug = String(name).toLowerCase().trim()
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return `manual-${slug || "result"}`;
+  }
+
+  function manualRow(entry, bench) {
+    const values = {};
+    const metricIds = new Set(bench.metrics.map((m) => m.id));
+    for (const [id, value] of Object.entries(entry.values || {})) {
+      if (metricIds.has(id) && typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100) {
+        values[id] = value;
+      }
+    }
+    const paperTitle = entry.paperTitle || `${entry.name} — manually recorded result`;
+    return {
+      method: entry.method || methodSlug(entry.name),
+      name: entry.name,
+      values,
+      size: entry.size || "",
+      setting: entry.setting || "",
+      note: entry.notes || "",
+      manual: true,
+      manualId: entry.id,
+      paper: {
+        title: paperTitle,
+        venue: entry.venue || "",
+        year: Number.isInteger(entry.year) ? entry.year : "",
+        url: safeHttpUrl(entry.sourceUrl)
+      }
+    };
+  }
+
+  function rowsForBenchmark(bench) {
+    return bench.rows.concat(readManualEntries()
+      .filter((entry) => entry.benchmark === bench.id)
+      .map((entry) => manualRow(entry, bench)));
+  }
+
+  function currentBenchmarkId() {
+    const match = location.hash.match(/^#\/?benchmark\/([\w-]+)/);
+    return match ? match[1] : null;
+  }
+
+  function showToast(message, tone) {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+    window.clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.className = `toast is-visible${tone ? ` ${tone}` : ""}`;
+    toastTimer = window.setTimeout(() => {
+      toast.classList.remove("is-visible");
+    }, 4200);
+  }
+
+  function manualFieldError(input, error, message) {
+    input.setAttribute("aria-invalid", "true");
+    error.textContent = message;
+  }
+
+  function clearManualErrors() {
+    const form = document.getElementById("manual-entry-form");
+    if (!form) return;
+    form.querySelectorAll(".field-error").forEach((el) => { el.textContent = ""; });
+    form.querySelectorAll("[aria-invalid=\"true\"]").forEach((el) => el.removeAttribute("aria-invalid"));
+    const summary = document.getElementById("manual-entry-summary");
+    if (summary) {
+      summary.hidden = true;
+      summary.textContent = "";
+    }
+  }
+
+  function updateManualMetricFields(benchmarkId, values) {
+    const fieldset = document.getElementById("manual-metric-fields");
+    const context = document.getElementById("manual-entry-context");
+    if (!fieldset || !context) return;
+    const bench = DATA.benchmarks.find((item) => item.id === benchmarkId);
+    if (!bench) {
+      context.innerHTML = `<span class="dialog-context-empty">Choose a benchmark to load its metric columns.</span>`;
+      fieldset.innerHTML = `<p class="metric-empty">Select a benchmark above to enter its scores.</p>`;
+      return;
+    }
+    context.innerHTML = `<span class="dialog-context-label">Recording for</span><strong>${esc(bench.name)}</strong><span class="dialog-context-split">${esc(bench.split)}</span>`;
+    fieldset.innerHTML = bench.metrics.map((metric) => {
+      const inputId = `manual-metric-${metric.id}`;
+      return `<div class="metric-entry">
+        <label for="${esc(inputId)}">${esc(metric.label)}<span class="metric-group">${esc(metric.group)}</span></label>
+        <input id="${esc(inputId)}" name="${esc(metric.id)}" type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="—" aria-describedby="${esc(inputId)}-error">
+        <p class="field-error" id="${esc(inputId)}-error" aria-live="polite"></p>
+      </div>`;
+    }).join("");
+    for (const metric of bench.metrics) {
+      const input = document.getElementById(`manual-metric-${metric.id}`);
+      if (input && values && values[metric.id] != null) input.value = values[metric.id];
+    }
+  }
+
+  function populateManualBenchmarks() {
+    const select = document.getElementById("manual-benchmark");
+    if (!select) return;
+    select.innerHTML = `<option value="">Choose a benchmark…</option>` + DATA.benchmarks.map((bench) =>
+      `<option value="${esc(bench.id)}">${esc(bench.name)} · ${esc(bench.split)}</option>`).join("");
+  }
+
+  function restoreManualFocus() {
+    const target = manualReturnFocus;
+    manualReturnFocus = null;
+    manualEditingId = null;
+    const benchmark = document.getElementById("manual-benchmark");
+    if (benchmark) benchmark.disabled = false;
+    if (target && target.isConnected) target.focus();
+  }
+
+  function closeManualEntryModal() {
+    const dialog = document.getElementById("manual-entry-modal");
+    if (!dialog) return;
+    if (typeof dialog.close === "function") {
+      if (dialog.open) dialog.close();
+    } else {
+      dialog.removeAttribute("open");
+      restoreManualFocus();
+    }
+  }
+
+  function openManualEntryModal(benchmarkId, entryId) {
+    const dialog = document.getElementById("manual-entry-modal");
+    const form = document.getElementById("manual-entry-form");
+    if (!dialog || !form) return;
+    const entry = entryId ? readManualEntries().find((item) => item.id === entryId) : null;
+    manualEditingId = entry ? entry.id : null;
+    manualReturnFocus = document.activeElement;
+    form.reset();
+    clearManualErrors();
+
+    const title = document.getElementById("manual-entry-title");
+    const intro = document.getElementById("manual-entry-intro");
+    const save = document.getElementById("manual-entry-save");
+    const benchmark = document.getElementById("manual-benchmark");
+    title.textContent = entry ? "Update result" : "Record a result";
+    intro.textContent = entry
+      ? "Correct the values or source details for this local result."
+      : "Capture a paper’s reported scores while you read. Your entry stays in this browser until you remove it.";
+    save.textContent = entry ? "Save changes" : "Save result";
+    benchmark.disabled = !!entry;
+    benchmark.value = entry ? entry.benchmark : (benchmarkId || "");
+    updateManualMetricFields(benchmark.value, entry ? entry.values : {});
+
+    if (entry) {
+      document.getElementById("manual-method").value = entry.name || "";
+      document.getElementById("manual-setting").value = entry.setting || "";
+      document.getElementById("manual-size").value = entry.size || "";
+      document.getElementById("manual-paper-title").value = entry.paperTitle || "";
+      document.getElementById("manual-venue").value = entry.venue || "";
+      document.getElementById("manual-year").value = entry.year || "";
+      document.getElementById("manual-source-url").value = entry.sourceUrl || "";
+      document.getElementById("manual-notes").value = entry.notes || "";
+    }
+
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    window.requestAnimationFrame(() => document.getElementById("manual-method").focus());
+  }
+
+  function submitManualEntry(event) {
+    event.preventDefault();
+    clearManualErrors();
+    const method = document.getElementById("manual-method");
+    const benchmark = document.getElementById("manual-benchmark");
+    const year = document.getElementById("manual-year");
+    const sourceUrl = document.getElementById("manual-source-url");
+    const summary = document.getElementById("manual-entry-summary");
+    let firstInvalid = null;
+    let errorCount = 0;
+    const invalidate = (input, error, message) => {
+      errorCount += 1;
+      if (!firstInvalid) firstInvalid = input;
+      manualFieldError(input, error, message);
+    };
+
+    if (!method.value.trim()) invalidate(method, document.getElementById("manual-method-error"), "Enter a method name.");
+    if (!benchmark.value) invalidate(benchmark, document.getElementById("manual-benchmark-error"), "Choose the benchmark for these scores.");
+
+    const bench = DATA.benchmarks.find((item) => item.id === benchmark.value);
+    const values = {};
+    let hasValue = false;
+    if (bench) {
+      for (const metric of bench.metrics) {
+        const input = document.getElementById(`manual-metric-${metric.id}`);
+        const error = document.getElementById(`manual-metric-${metric.id}-error`);
+        const raw = input ? input.value.trim() : "";
+        if (!raw) continue;
+        const value = Number(raw);
+        if (!Number.isFinite(value) || value < 0 || value > 100) {
+          invalidate(input, error, "Use a number from 0 to 100.");
+        } else {
+          values[metric.id] = value;
+          hasValue = true;
+        }
+      }
+    }
+    if (bench && !hasValue) {
+      errorCount += 1;
+      const valuesError = document.getElementById("manual-values-error");
+      valuesError.textContent = "Enter at least one performance value.";
+      if (!firstInvalid) firstInvalid = document.getElementById(`manual-metric-${bench.metrics[0].id}`);
+    }
+
+    const yearRaw = year.value.trim();
+    if (yearRaw && (!Number.isInteger(Number(yearRaw)) || Number(yearRaw) < 1900 || Number(yearRaw) > 2100)) {
+      invalidate(year, document.getElementById("manual-year-error"), "Use a four-digit year from 1900 to 2100.");
+    }
+    const sourceRaw = sourceUrl.value.trim();
+    if (sourceRaw && (!sourceUrl.checkValidity() || !safeHttpUrl(sourceRaw))) {
+      invalidate(sourceUrl, document.getElementById("manual-source-url-error"), "Use a valid http:// or https:// URL.");
+    }
+
+    if (errorCount) {
+      summary.hidden = false;
+      summary.textContent = errorCount === 1 ? "Check the highlighted field." : `Check the ${errorCount} highlighted fields.`;
+      if (firstInvalid) firstInvalid.focus();
+      return;
+    }
+
+    const entry = {
+      id: manualEditingId || `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      benchmark: benchmark.value,
+      method: methodSlug(method.value),
+      name: method.value.trim(),
+      setting: document.getElementById("manual-setting").value,
+      size: document.getElementById("manual-size").value.trim(),
+      values,
+      paperTitle: document.getElementById("manual-paper-title").value.trim(),
+      venue: document.getElementById("manual-venue").value.trim(),
+      year: yearRaw ? Number(yearRaw) : "",
+      sourceUrl: sourceRaw ? safeHttpUrl(sourceRaw) : "",
+      notes: document.getElementById("manual-notes").value.trim(),
+      updatedAt: new Date().toISOString()
+    };
+    const entries = readManualEntries();
+    const existing = entries.findIndex((item) => item.id === entry.id);
+    if (existing >= 0) entries[existing] = entry;
+    else entries.push(entry);
+    if (!writeManualEntries(entries)) {
+      summary.hidden = false;
+      summary.textContent = "This browser could not save local data. Check storage permissions and try again.";
+      return;
+    }
+
+    const wasEditing = !!manualEditingId;
+    closeManualEntryModal();
+    const destination = `#/benchmark/${entry.benchmark}`;
+    if (currentBenchmarkId() === entry.benchmark) route();
+    else location.hash = destination;
+    showToast(wasEditing ? "Result updated" : "Result saved");
+  }
+
+  function setupManualEntry() {
+    const dialog = document.getElementById("manual-entry-modal");
+    const form = document.getElementById("manual-entry-form");
+    const benchmark = document.getElementById("manual-benchmark");
+    if (!dialog || !form || dialog.dataset.ready) return;
+    dialog.dataset.ready = "true";
+    populateManualBenchmarks();
+    benchmark.addEventListener("change", () => {
+      clearManualErrors();
+      updateManualMetricFields(benchmark.value, {});
+    });
+    form.addEventListener("submit", submitManualEntry);
+    document.getElementById("manual-entry-close").addEventListener("click", closeManualEntryModal);
+    document.getElementById("manual-entry-cancel").addEventListener("click", closeManualEntryModal);
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) closeManualEntryModal();
+    });
+    dialog.addEventListener("close", restoreManualFocus);
+    document.addEventListener("click", (event) => {
+      const trigger = event.target.closest("[data-open-manual]");
+      if (!trigger) return;
+      openManualEntryModal(trigger.dataset.benchmarkId || currentBenchmarkId());
+    });
   }
 
   /* ---------------------------------------------------------- router */
@@ -165,14 +490,15 @@
     const bestRow = bestBench ? leaders[bestBench.id].row : null;
     const bestMetric = bestBench ? leaders[bestBench.id].metric : null;
     const leadCount = Object.values(leaders).filter((l) =>
-      l.row.method === (bestRow && bestRow.method) && !l.row.name).length;
+      l.row && l.row.method === (bestRow && bestRow.method)).length;
 
     const cards = DATA.benchmarks.map((b) => {
       const pm = primaryMetric(b);
-      const best = b.rows.reduce((acc, r) =>
+      const benchmarkRows = rowsForBenchmark(b);
+      const best = benchmarkRows.reduce((acc, r) =>
         (r.values[pm.id] != null && r.values[pm.id] > (acc ? acc.values[pm.id] : -1) ? r : acc), null);
-      const maxV = Math.max(...b.rows.map((r) => r.values[pm.id] || 0));
-      const ticks = b.rows
+      const maxV = Math.max(...benchmarkRows.map((r) => r.values[pm.id] || 0));
+      const ticks = benchmarkRows
         .filter((r) => r.values[pm.id] != null)
         .map((r) => `<span class="timeline-tick${r === best ? " is-sota" : ""}" title="${esc(methodName(r))}: ${fmt(r.values[pm.id])}" style="left:${((r.values[pm.id] / maxV) * 100).toFixed(1)}%"></span>`)
         .join("");
@@ -187,8 +513,8 @@
           <span class="timeline-track"></span>${ticks}
         </div>
         <div class="card-bottom">
-          <span class="card-sota-name">${esc(methodName(best))} <span class="card-sota-score">${fmt(best.values[pm.id])} ${esc(pm.label)}</span></span>
-          <span class="card-count">${b.rows.length} methods</span>
+          <span class="card-sota-name">${esc(methodName(best))}${best.manual ? ' <span class="tag manual">manual</span>' : ""} <span class="card-sota-score">${fmt(best.values[pm.id])} ${esc(pm.label)}</span></span>
+          <span class="card-count">${benchmarkRows.length} results</span>
         </div>
       </a>`;
     }).join("");
@@ -202,25 +528,31 @@
             Method rankings for temporal sentence grounding and video moment
             retrieval, compiled from published results across ${DATA.benchmarks.length}
             benchmarks. Sort any column, expand any row for the paper behind
-            the number.
+            the number, or record a result as you read.
           </p>
           <div class="hero-stats">
             <div class="stat"><div class="stat-value">${DATA.benchmarks.length}</div><div class="stat-label">Benchmarks</div></div>
             <div class="stat"><div class="stat-value">${countMethods()}</div><div class="stat-label">Methods</div></div>
-            <div class="stat"><div class="stat-value">${countRows()}</div><div class="stat-label">Reported results</div></div>
+            <div class="stat"><div class="stat-value">${countRows()}</div><div class="stat-label">Results on board</div></div>
             <div class="stat"><div class="stat-value">${esc(fmtDate(DATA.updated))}</div><div class="stat-label">Last updated</div></div>
           </div>
           <div class="sota">
             <span class="sota-label">Current moment</span>
-            <span class="sota-model">${esc(methodName(bestRow))}</span>
+            <span class="sota-model">${esc(methodName(bestRow))}${bestRow.manual ? ' <span class="tag manual">manual</span>' : ""}</span>
             <span class="sota-score">${fmt(bestRow.values[bestMetric.id])} ${esc(bestMetric.label)}</span>
             <span class="sota-meta">leads ${leadCount} of ${DATA.benchmarks.length} benchmarks · ${esc(bestBench.name)} · ${esc(bestBench.split)}</span>
           </div>
         </section>
         <section>
           <div class="section-head">
-            <h2 class="section-title">Benchmarks</h2>
-            <span class="section-note">Ranked by primary metric</span>
+            <div>
+              <h2 class="section-title">Benchmarks</h2>
+              <span class="section-note">Ranked by primary metric</span>
+            </div>
+            <button type="button" class="button-secondary section-action" data-open-manual>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              Record a result
+            </button>
           </div>
           <div class="cards">${cards}</div>
           <div class="taxonomy">
@@ -235,13 +567,13 @@
   }
 
   function countMethods() {
-    return new Set(DATA.benchmarks.flatMap((b) => b.rows.map((r) => r.method))).size;
+    return new Set(DATA.benchmarks.flatMap((b) => rowsForBenchmark(b).map((r) => r.method))).size;
   }
   function tagCountAll(tag) {
-    return DATA.benchmarks.reduce((n, b) => n + b.rows.filter((r) => methodTags(r.method).includes(tag)).length, 0);
+    return DATA.benchmarks.reduce((n, b) => n + rowsForBenchmark(b).filter((r) => methodTags(r.method).includes(tag)).length, 0);
   }
   function countRows() {
-    return DATA.benchmarks.reduce((n, b) => n + b.rows.length, 0);
+    return DATA.benchmarks.reduce((n, b) => n + rowsForBenchmark(b).length, 0);
   }
 
   /* ---------------------------------------------------------- benchmark */
@@ -255,18 +587,19 @@
     state[id] = st;
     const metricById = Object.fromEntries(bench.metrics.map((m) => [m.id, m]));
 
+    const benchmarkRows = rowsForBenchmark(bench);
     // unavailable papers (not yet extracted) appear as rows at the bottom (non-mutating)
     const gapRows = (DATA.unavailable || [])
       .filter((u) => u.benchmarks.includes(id))
       .map((u) => ({ method: u.id, values: {}, failed: u.code, note: u.failReason }));
-    let rows = sortRows(bench.rows.concat(gapRows), st.sortMetric, st.dir);
+    let rows = sortRows(benchmarkRows.concat(gapRows), st.sortMetric, st.dir);
     const gapCount = gapRows.length;
     let searchTerm = "";
     const imported = (DATA.imported || []).filter((r) => r.benchmark === id);
 
     /* ---- timeline ---- */
-    const maxV = Math.max(...bench.rows.map((r) => r.values[pm.id] || 0));
-    const sorted = sortRows(bench.rows, pm.id, "desc").filter((r) => r.values[pm.id] != null);
+    const maxV = Math.max(...benchmarkRows.map((r) => r.values[pm.id] || 0));
+    const sorted = sortRows(benchmarkRows, pm.id, "desc").filter((r) => r.values[pm.id] != null);
     const top3 = sorted.slice(0, 3);
     const pct = (v) => Math.min(99.4, (v / maxV) * 100);
     const pctL = (v) => Math.max(8, Math.min(92, (v / maxV) * 100));
@@ -355,7 +688,13 @@
             <span class="search-icon" aria-hidden="true">⌕</span>
             <input type="search" id="search" placeholder="Filter methods…" aria-label="Filter methods">
           </div>
-          <span class="result-count" id="result-count"></span>
+          <div class="toolbar-actions">
+            <span class="result-count" id="result-count"></span>
+            <button type="button" class="button-primary" data-open-manual data-benchmark-id="${esc(bench.id)}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              Record result
+            </button>
+          </div>
         </section>
         <section class="tagbar" id="tagbar" aria-label="Filter by tag"></section>
         <div class="gaps" id="gaps"></div>
@@ -389,13 +728,17 @@
       resultCount.textContent = `${visible.length} of ${rows.length} results`;
 
       tbody.innerHTML = visible.map((r, i) => {
-        const paper = methodPaper(r.method);
+        const paper = r.paper || methodPaper(r.method);
         const rank = i + 1;
         const tags = [];
         if (r.size) tags.push(esc(r.size));
         if (r.setting) tags.push(`<span class="tag ${esc(r.setting)}">${esc(r.setting)}</span>`);
-        if (paper) tags.push(`<span class="tag venue">${esc(paper.venue)} ${paper.year}</span>`);
+        if (paper && (paper.venue || paper.year)) tags.push(`<span class="tag venue">${esc(paper.venue || "")} ${paper.year || ""}</span>`);
+        if (r.manual) tags.push(`<span class="tag manual">manual</span>`);
         if (r.failed) tags.push(`<span class="tag failed">⚠ no numbers — pending</span>`);
+        const sourceLink = paperSourceLink(paper);
+        const paperMeta = [paperLink(paper), r.note].filter(Boolean).map((item) => esc(item));
+        if (sourceLink) paperMeta.push(sourceLink);
         for (const t of TAG_ORDER) {
           if (!methodTags(r.method).includes(t)) continue;
           if (t === "zero-shot" && r.setting === "zero-shot") continue; // already shown as setting
@@ -426,7 +769,8 @@
           <td colspan="${metricCols}">
             <div class="paper">
               <div class="paper-title">${esc(paper ? paper.title : "Paper details unavailable")}</div>
-              <div class="paper-meta">${esc(paperLink(paper))}${r.note ? " · " + esc(r.note) : ""}${paper && paper.arxiv ? ` · <a href="https://arxiv.org/abs/${esc(paper.arxiv)}" target="_blank" rel="noopener">open paper ↗</a>` : ""}</div>
+              <div class="paper-meta">${paperMeta.join(" · ")}</div>
+              ${r.manual ? `<div class="paper-actions"><span class="tag manual">saved in this browser</span><button type="button" class="paper-action" data-manual-edit="${esc(r.manualId)}">Edit</button><button type="button" class="paper-action is-danger" data-manual-remove="${esc(r.manualId)}">Remove</button></div>` : ""}
             </div>
           </td>
         </tr>`;
@@ -447,6 +791,26 @@
 
     /* ---- interactions ---- */
     tbody.addEventListener("click", (e) => {
+      const edit = e.target.closest("[data-manual-edit]");
+      if (edit) {
+        e.stopPropagation();
+        openManualEntryModal(bench.id, edit.dataset.manualEdit);
+        return;
+      }
+      const remove = e.target.closest("[data-manual-remove]");
+      if (remove) {
+        e.stopPropagation();
+        const entry = readManualEntries().find((item) => item.id === remove.dataset.manualRemove);
+        if (!entry || !window.confirm(`Remove the manual result for ${entry.name}?`)) return;
+        const remaining = readManualEntries().filter((item) => item.id !== entry.id);
+        if (writeManualEntries(remaining)) {
+          renderBenchmark(bench.id);
+          showToast("Result removed");
+        } else {
+          showToast("Could not remove result", "error");
+        }
+        return;
+      }
       const tr = e.target.closest("tr.row-method");
       if (tr) toggleRow(tr);
     });
@@ -469,7 +833,7 @@
         const m = th.dataset.metric;
         st.dir = st.sortMetric === m && st.dir === "desc" ? "asc" : "desc";
         st.sortMetric = m;
-        rows = sortRows(bench.rows, st.sortMetric, st.dir);
+        rows = sortRows(benchmarkRows.concat(gapRows), st.sortMetric, st.dir);
         drawTable();
         // update aria-sort markers
         document.querySelectorAll("th[data-metric]").forEach((h) => {
@@ -491,7 +855,7 @@
     /* ---- tag filter bar ---- */
     const tagbar = document.getElementById("tagbar");
     const tagCounts = {};
-    for (const r of bench.rows) {
+    for (const r of benchmarkRows) {
       for (const t of methodTags(r.method)) {
         if (TAG_ORDER.includes(t)) tagCounts[t] = (tagCounts[t] || 0) + 1;
       }
@@ -501,7 +865,7 @@
       const chip = (t, active) =>
         `<button class="tagchip${active ? " active" : ""}" data-tag="${t || ""}" aria-pressed="${active}">` +
         `<span class="tagchip-label">${t ? esc(TAG_LABELS[t] || t) : "All"}</span>` +
-        `<span class="tagchip-count">${t ? tagCounts[t] : bench.rows.length}</span></button>`;
+        `<span class="tagchip-count">${t ? tagCounts[t] : benchmarkRows.length}</span></button>`;
       tagbar.innerHTML = chip("", !st.tag) + present.map((t) => chip(t, st.tag === t)).join("");
       tagbar.querySelectorAll(".tagchip").forEach((b) => {
         b.addEventListener("click", () => {
@@ -561,8 +925,8 @@
         <h1>Every number points to a paper.</h1>
         <p class="lede">
           Momentboard ranks methods on temporal sentence grounding and video
-          moment retrieval benchmarks. All scores are as reported by the
-          authors of the cited papers — nothing here is re-run or estimated.
+          moment retrieval benchmarks. Published scores are as reported by the
+          cited papers; local entries are marked manual and remain in your browser.
         </p>
 
         <h2>Where the numbers come from</h2>
@@ -585,7 +949,7 @@
         <ul>
           <li>Numbers come from different papers, settings and feature backbones; small differences for the same method across papers (e.g. R2-Tuning) reflect evaluation variants.</li>
           <li>LLM-based methods (TimeChat, VTimeLLM, VideoMind, …) are often evaluated zero-shot on these benchmarks, while classic methods are fine-tuned — the tag on each row shows the setting, so comparisons are fair.</li>
-          <li>This board tracks published results, not live submissions.</li>
+          <li>The published dataset tracks reported results, not live submissions; local manual entries are clearly marked and remain private to this browser.</li>
         </ul>
 
         <h2>Tags</h2>
@@ -613,10 +977,12 @@
 
         <h2>Adding results</h2>
         <p>
-          Edit <code>js/data.js</code> (single source of truth), or run the
+          Use <b>Record result</b> to capture a paper while you read. Manual
+          entries are stored locally in this browser, marked <span class="tag manual">manual</span>,
+          and can be edited or removed from their expanded row. To publish a
+          result for everyone, edit <code>js/data.js</code> or run the
           extraction pipeline in <code>benchmark-extractor/</code> and import its
-          <code>summary.csv</code> with <code>tools/import_from_extractor.py</code> —
-          imported rows appear on the benchmark page marked as pending review.
+          <code>summary.csv</code> with <code>tools/import_from_extractor.py</code>.
         </p>
 
         <h2>Sources</h2>
@@ -644,6 +1010,7 @@
 
   /* ---------------------------------------------------------- boot */
 
+  setupManualEntry();
   navState();
   route();
 })();
