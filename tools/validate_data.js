@@ -23,7 +23,7 @@ for (const b of D.benchmarks) {
   }
 }
 const benchIds = new Set(D.benchmarks.map((b) => b.id));
-const failCodes = new Set(["image-table", "bad-download", "no-arxiv", "wrong-match"]);
+const failCodes = new Set(["image-table", "bad-download", "no-arxiv", "wrong-match", "bench-offboard"]);
 for (const u of D.unavailable || []) {
   if (u.code !== "wrong-match" && !known.has(u.id)) errors.push(`unavailable: unknown method ${u.id}`);
   if (!failCodes.has(u.code)) errors.push(`unavailable/${u.id}: unknown code ${u.code}`);
@@ -31,8 +31,8 @@ for (const u of D.unavailable || []) {
   for (const b of u.benchmarks || []) {
     if (!benchIds.has(b)) errors.push(`unavailable/${u.id}: unknown benchmark ${b}`);
   }
-  if ((u.code === "wrong-match") && (u.benchmarks || []).length > 0)
-    errors.push(`unavailable/${u.id}: wrong-match entries must not appear in tables`);
+  if ((u.code === "wrong-match" || u.code === "bench-offboard") && (u.benchmarks || []).length > 0)
+    errors.push(`unavailable/${u.id}: ${u.code} entries must not appear in tables`);
 }
 if (errors.length) {
   console.error(errors.join("\n"));

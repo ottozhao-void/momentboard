@@ -592,15 +592,15 @@ window.LEADERBOARD_DATA = {
    ]
   },
   "shotdetect": {
-   "title": "Zero-shot Video Moment Retrieval With Off-the-Shelf Models",
-   "venue": "NeurIPS-Workshop",
+   "title": "Zero-Shot Video Moment Retrieval With Off-the-Shelf Models (ShotDetect+CLIP+SimpleWatershed)",
+   "venue": "arXiv",
    "year": 2022,
+   "arxiv": "2211.02178",
    "tags": [
     "vmr",
-    "training-free",
-    "zero-shot"
-   ],
-   "arxiv": "2211.02178"
+    "zero-shot",
+    "training-free"
+   ]
   },
   "diffusionvmr": {
    "title": "DiffusionVMR: Diffusion Model for Joint Video Moment Retrieval and Highlight Detection",
@@ -675,10 +675,10 @@ window.LEADERBOARD_DATA = {
    "title": "SCANet: Scene Complexity Aware Network for Weakly-Supervised Video Moment Retrieval",
    "venue": "arXiv",
    "year": 2023,
+   "arxiv": "2310.05241",
    "tags": [
     "vmr"
-   ],
-   "arxiv": "2310.05241"
+   ]
   },
   "weakly-sup-div": {
    "title": "Iterative Proposal Refinement for Weakly-Supervised Video Grounding (Diverse Inference)",
@@ -738,12 +738,12 @@ window.LEADERBOARD_DATA = {
   },
   "sscs": {
    "title": "Support-Set Based Cross-Supervision for Video Grounding",
-   "venue": "arXiv",
+   "venue": "ACM MM",
    "year": 2021,
+   "arxiv": "2108.10576",
    "tags": [
     "vmr"
-   ],
-   "arxiv": "2108.10576"
+   ]
   },
   "off-shelf": {
    "title": "Zero-Shot Video Moment Retrieval With Off-the-Shelf Models",
@@ -765,21 +765,13 @@ window.LEADERBOARD_DATA = {
   },
   "diffvmr": {
    "title": "DiffusionVMR: Diffusion Model for Joint Video Moment Retrieval and Highlight Detection",
-   "venue": "arXiv",
-   "year": 2023,
+   "venue": "ECCV",
+   "year": 2024,
+   "arxiv": "2308.15109",
    "tags": [
-    "vmr"
-   ],
-   "arxiv": "2308.15109"
-  },
-  "hev": {
-   "title": "Hierarchical Event Memory for Accurate and Low-latency Online Video Temporal Grounding",
-   "venue": "arXiv",
-   "year": 2025,
-   "tags": [
-    "vmr"
-   ],
-   "arxiv": "2508.04546"
+    "vmr",
+    "diffusion"
+   ]
   },
   "unc-guid": {
    "title": "Training-free Uncertainty Guidance for Complex Visual Tasks with MLLMs",
@@ -839,10 +831,12 @@ window.LEADERBOARD_DATA = {
    "title": "Mitigating Modality and Language-Style Gaps for Zero-Shot Video Moment Retrieval",
    "venue": "arXiv",
    "year": 2027,
+   "arxiv": "2607.19027",
    "tags": [
-    "vmr"
-   ],
-   "arxiv": "2607.19027"
+    "vmr",
+    "zero-shot",
+    "training-free"
+   ]
   },
   "kda": {
    "title": "KDA: Knowledge Diffusion Alignment with Enhanced Context for Video Temporal Grounding",
@@ -904,6 +898,15 @@ window.LEADERBOARD_DATA = {
    "title": "TinyViM: Frequency Decoupling for Tiny Hybrid Vision Mamba (WRONG MATCH — not VMR/TSG; exclude & re-resolve)",
    "venue": "excluded",
    "year": 2024,
+   "tags": [
+    "vmr"
+   ]
+  },
+  "hem": {
+   "title": "Hierarchical Event Memory for Accurate and Low-latency Online Video Temporal Grounding",
+   "venue": "arXiv",
+   "year": 2025,
+   "arxiv": "2508.04546",
    "tags": [
     "vmr"
    ]
@@ -1153,18 +1156,6 @@ window.LEADERBOARD_DATA = {
     {
      "method": "shotdetect",
      "values": {
-      "r1@0.5": 48.33,
-      "r1@0.7": 30.96,
-      "map@0.5": 46.94,
-      "map@0.75": 25.75,
-      "map-avg": 27.96
-     },
-     "setting": "zero-shot",
-     "name": "ShotDetect+CLIP+Rerank (ZS)"
-    },
-    {
-     "method": "shotdetect",
-     "values": {
       "r1@0.5": 40.24,
       "r1@0.7": 25.94,
       "map@0.5": 41.74,
@@ -1218,6 +1209,40 @@ window.LEADERBOARD_DATA = {
      "setting": "fine-tuned",
      "name": "TD-DETR",
      "note": "val split"
+    },
+    {
+     "method": "diffvmr",
+     "values": {
+      "r1@0.5": 62.91,
+      "r1@0.7": 47.08,
+      "map@0.5": 63.68,
+      "map@0.75": 43.88,
+      "map-avg": 42.74
+     },
+     "setting": "fine-tuned",
+     "note": "QVHighlights test, Table 5 (ECCV 2024)"
+    },
+    {
+     "method": "shotdetect",
+     "values": {
+      "r1@0.5": 48.33,
+      "r1@0.7": 30.96,
+      "map@0.5": 46.94,
+      "map@0.75": 25.75,
+      "map-avg": 27.96
+     },
+     "setting": "zero-shot",
+     "note": "Zero-shot, off-the-shelf CLIP + shot detection + watershed (Table 2)"
+    },
+    {
+     "method": "mitig-gap",
+     "values": {
+      "r1@0.5": 61.0,
+      "r1@0.7": 43.2,
+      "map-avg": 39.3
+     },
+     "setting": "zero-shot",
+     "note": "QVHighlights val (Table 12 full validation set)"
     }
    ]
   },
@@ -1764,6 +1789,35 @@ window.LEADERBOARD_DATA = {
      "setting": "fine-tuned",
      "name": "G2L",
      "note": "VGG features"
+    },
+    {
+     "method": "diffvmr",
+     "values": {
+      "r@0.5": 59.66,
+      "r@0.7": 38.73
+     },
+     "setting": "fine-tuned",
+     "note": "Charades-STA, SF+C features (Table 6)"
+    },
+    {
+     "method": "scanet",
+     "values": {
+      "r@0.3": 68.04,
+      "r@0.5": 50.85,
+      "r@0.7": 24.07
+     },
+     "setting": "weakly-supervised",
+     "note": "Weakly-supervised (Table 1)"
+    },
+    {
+     "method": "sscs",
+     "values": {
+      "r@0.5": 56.97,
+      "r@0.7": 32.74
+     },
+     "name": "2D-TAN + SS",
+     "setting": "fine-tuned",
+     "note": "Support-Set cross-supervision on 2D-TAN (Table 1)"
     }
    ]
   },
@@ -2143,6 +2197,33 @@ window.LEADERBOARD_DATA = {
      },
      "setting": "weakly-supervised",
      "name": "Weak-Sup Diverse Inference"
+    },
+    {
+     "method": "diffvmr",
+     "values": {
+      "r@0.3": 52.9,
+      "r@0.5": 38.02
+     },
+     "setting": "fine-tuned",
+     "note": "ActivityNet-Captions val2, SF+C (Table 7)"
+    },
+    {
+     "method": "scanet",
+     "values": {
+      "r@0.3": 56.07,
+      "r@0.5": 31.52
+     },
+     "setting": "weakly-supervised",
+     "note": "Weakly-supervised (Table 2)"
+    },
+    {
+     "method": "sscs",
+     "values": {
+      "r@0.5": 46.67
+     },
+     "name": "2D-TAN + SS",
+     "setting": "fine-tuned",
+     "note": "ANet (support-set cross-supervision)"
     }
    ]
   },
@@ -2369,6 +2450,24 @@ window.LEADERBOARD_DATA = {
      "setting": "fine-tuned",
      "name": "HieraMamba",
      "note": "R1 metrics"
+    },
+    {
+     "method": "sscs",
+     "values": {
+      "r@0.5": 29.56
+     },
+     "name": "2D-TAN + SS",
+     "setting": "fine-tuned",
+     "note": "TACoS (support-set cross-supervision)"
+    },
+    {
+     "method": "hem",
+     "values": {
+      "r@0.5": 45.29,
+      "r@0.7": 26.25
+     },
+     "setting": "online",
+     "note": "Online VTG (Table 1, w/o future branch)"
     }
    ]
   },
@@ -2633,14 +2732,6 @@ window.LEADERBOARD_DATA = {
    ]
   },
   {
-   "id": "sscs",
-   "code": "image-table",
-   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
-   "benchmarks": [
-    "charades-sta"
-   ]
-  },
-  {
    "id": "off-shelf",
    "code": "image-table",
    "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
@@ -2665,55 +2756,22 @@ window.LEADERBOARD_DATA = {
    ]
   },
   {
-   "id": "diffvmr",
-   "code": "image-table",
-   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
-   "benchmarks": [
-    "qvhighlights"
-   ]
-  },
-  {
-   "id": "scanet",
-   "code": "image-table",
-   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
-   "benchmarks": [
-    "charades-sta"
-   ]
-  },
-  {
-   "id": "hev",
-   "code": "image-table",
-   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
-   "benchmarks": [
-    "ego4d-nlq",
-    "charades-sta"
-   ]
-  },
-  {
    "id": "unc-guid",
-   "code": "image-table",
-   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
-   "benchmarks": [
-    "charades-sta",
-    "activitynet-captions"
-   ]
+   "code": "bench-offboard",
+   "failReason": "UG-Ground on Charades-STA extracted (R@0.5≈51.0, training-free MLLM) but metric label ambiguous (single 'Charades' column) — verify metric before adding.",
+   "benchmarks": []
   },
   {
    "id": "egoexo",
-   "code": "image-table",
-   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
-   "benchmarks": [
-    "ego4d-nlq"
-   ]
+   "code": "bench-offboard",
+   "failReason": "Performance extracted (CharadesEgo/EgoExo-4D) but those benchmarks are not tracked on this board yet — add CharadesEgo benchmark or map to Ego4D-NLQ manually.",
+   "benchmarks": []
   },
   {
    "id": "pt2span",
-   "code": "image-table",
-   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
-   "benchmarks": [
-    "qvhighlights",
-    "charades-sta"
-   ]
+   "code": "bench-offboard",
+   "failReason": "Performance extracted (MAD / MomentSeeker / Charades-CD Avg) but those benchmarks are not tracked on this board yet — map R1@0.1/0.3 notes to a tracked benchmark manually.",
+   "benchmarks": []
   },
   {
    "id": "beyond-c",
@@ -2742,14 +2800,6 @@ window.LEADERBOARD_DATA = {
   },
   {
    "id": "sink-tok",
-   "code": "image-table",
-   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
-   "benchmarks": [
-    "charades-sta"
-   ]
-  },
-  {
-   "id": "mitig-gap",
    "code": "image-table",
    "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
    "benchmarks": [
