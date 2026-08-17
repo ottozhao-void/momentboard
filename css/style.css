@@ -986,3 +986,43 @@ tr.row-paper .paper {
 }
 
 .taxonomy-sep { color: var(--line-strong); }
+
+/* ------------------------------------------------------------ unavailable / gaps */
+
+.tag.failed {
+  color: #9a3412;
+  border-color: #f0c9a8;
+  background: #fff3e8;
+  /* keep amber family, but clearly a "warning" state */
+}
+
+.gaps { margin-top: 22px; }
+
+.gaps-banner {
+  border: 1px solid #f0c9a8;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-alt);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.gaps-head { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.02em; color: var(--ink); margin-bottom: 8px; }
+.gaps-sub { font-weight: 400; color: var(--ink-3); margin-left: 8px; }
+
+.gaps-list { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
+.gaps-list li { line-height: 1.5; }
+
+.gaps-manual {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9a3412;
+  border: 1px dashed #e0a97a;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  white-space: nowrap;
+}

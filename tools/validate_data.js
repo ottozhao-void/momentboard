@@ -22,9 +22,22 @@ for (const b of D.benchmarks) {
     }
   }
 }
+const benchIds = new Set(D.benchmarks.map((b) => b.id));
+const failCodes = new Set(["image-table", "bad-download", "no-arxiv", "wrong-match"]);
+for (const u of D.unavailable || []) {
+  if (u.code !== "wrong-match" && !known.has(u.id)) errors.push(`unavailable: unknown method ${u.id}`);
+  if (!failCodes.has(u.code)) errors.push(`unavailable/${u.id}: unknown code ${u.code}`);
+  if (!u.failReason || !u.failReason.trim()) errors.push(`unavailable/${u.id}: missing failReason`);
+  for (const b of u.benchmarks || []) {
+    if (!benchIds.has(b)) errors.push(`unavailable/${u.id}: unknown benchmark ${b}`);
+  }
+  if ((u.code === "wrong-match") && (u.benchmarks || []).length > 0)
+    errors.push(`unavailable/${u.id}: wrong-match entries must not appear in tables`);
+}
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);
 }
 const rows = D.benchmarks.reduce((n, b) => n + b.rows.length, 0);
-console.log(`DATA OK: ${D.benchmarks.length} benchmarks, ${rows} rows`);
+const unavail = (D.unavailable || []).filter((u) => (u.benchmarks || []).length > 0).length;
+console.log(`DATA OK: ${D.benchmarks.length} benchmarks, ${rows} rows, ${unavail} unavailable marked for review`);

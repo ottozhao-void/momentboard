@@ -577,25 +577,19 @@ window.LEADERBOARD_DATA = {
   },
   "hitea": {
    "title": "HiTeA: Hierarchical Temporal Alignment for Training-Free Long-Video Temporal Grounding",
-   "venue": "ICLR",
+   "venue": "ICLR 2026 (OpenReview)",
    "year": 2026,
    "tags": [
-    "vmr",
-    "training-free",
-    "long-video"
-   ],
-   "url": "https://openreview.net/forum?id=vIecIscDJf"
+    "vmr"
+   ]
   },
   "zs-blip": {
-   "title": "Zero-Shot Video Moment Retrieval Using BLIP-Based Models",
-   "venue": "ISVC",
+   "title": "Zero-Shot Video Moment Retrieval Using BLIP-Based Models (ISVC/Springer)",
+   "venue": "ISVC 2023 (Springer)",
    "year": 2023,
    "tags": [
-    "vmr",
-    "training-free",
-    "zero-shot"
-   ],
-   "url": "https://link.springer.com/chapter/10.1007/978-3-031-47969-4_13"
+    "vmr"
+   ]
   },
   "shotdetect": {
    "title": "Zero-shot Video Moment Retrieval With Off-the-Shelf Models",
@@ -679,11 +673,10 @@ window.LEADERBOARD_DATA = {
   },
   "scanet": {
    "title": "SCANet: Scene Complexity Aware Network for Weakly-Supervised Video Moment Retrieval",
-   "venue": "ICCV",
+   "venue": "arXiv",
    "year": 2023,
    "tags": [
-    "vmr",
-    "weakly-supervised"
+    "vmr"
    ],
    "arxiv": "2310.05241"
   },
@@ -724,6 +717,196 @@ window.LEADERBOARD_DATA = {
     "vmr"
    ],
    "arxiv": "2307.14277"
+  },
+  "scdm": {
+   "title": "Semantic Conditioned Dynamic Modulation for Temporal Sentence Grounding",
+   "venue": "arXiv",
+   "year": 2019,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "1910.14303"
+  },
+  "hidden-tsg": {
+   "title": "Uncovering Hidden Challenges in Query-Based Video Moment Retrieval",
+   "venue": "arXiv",
+   "year": 2020,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2009.00325"
+  },
+  "sscs": {
+   "title": "Support-Set Based Cross-Supervision for Video Grounding",
+   "venue": "arXiv",
+   "year": 2021,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2108.10576"
+  },
+  "off-shelf": {
+   "title": "Zero-Shot Video Moment Retrieval With Off-the-Shelf Models",
+   "venue": "arXiv",
+   "year": 2022,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2211.02178"
+  },
+  "bg-aware": {
+   "title": "Background-aware Language-centric Temporal Grounding",
+   "venue": "arXiv",
+   "year": 2023,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2306.02728"
+  },
+  "diffvmr": {
+   "title": "DiffusionVMR: Diffusion Model for Joint Video Moment Retrieval and Highlight Detection",
+   "venue": "arXiv",
+   "year": 2023,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2308.15109"
+  },
+  "hev": {
+   "title": "Hierarchical Event Memory for Accurate and Low-latency Online Video Temporal Grounding",
+   "venue": "arXiv",
+   "year": 2025,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2508.04546"
+  },
+  "unc-guid": {
+   "title": "Training-free Uncertainty Guidance for Complex Visual Tasks with MLLMs",
+   "venue": "arXiv",
+   "year": 2025,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2510.00705"
+  },
+  "egoexo": {
+   "title": "EgoExo-Con: Exploring View-Invariant Video Temporal Understanding",
+   "venue": "arXiv",
+   "year": 2025,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2510.26113"
+  },
+  "pt2span": {
+   "title": "Point to Span: Zero-Shot Moment Retrieval for Navigating Unseen Hour-Long Videos",
+   "venue": "arXiv",
+   "year": 2025,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2512.10363"
+  },
+  "beyond-c": {
+   "title": "Beyond Caption-Based Queries for Video Moment Retrieval",
+   "venue": "arXiv",
+   "year": 2026,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2603.02363"
+  },
+  "ev-chain": {
+   "title": "Keeping the Evidence Chain: Semantic Evidence Allocation for Training-Free Token Grounding",
+   "venue": "arXiv",
+   "year": 2026,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2603.05663"
+  },
+  "sink-tok": {
+   "title": "Sink-Token-Aware Pruning for Fine-Grained Video Understanding",
+   "venue": "arXiv",
+   "year": 2026,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2604.20937"
+  },
+  "mitig-gap": {
+   "title": "Mitigating Modality and Language-Style Gaps for Zero-Shot Video Moment Retrieval",
+   "venue": "arXiv",
+   "year": 2027,
+   "tags": [
+    "vmr"
+   ],
+   "arxiv": "2607.19027"
+  },
+  "kda": {
+   "title": "KDA: Knowledge Diffusion Alignment with Enhanced Context for Video Temporal Grounding",
+   "venue": "ICCV 2025",
+   "year": 2025,
+   "tags": [
+    "vmr"
+   ]
+  },
+  "confdiff": {
+   "title": "ConfDiff: Confidence-Guided Representation Diffusion for Video Moment Retrieval",
+   "venue": "ICLR 2025",
+   "year": 2024,
+   "tags": [
+    "vmr"
+   ]
+  },
+  "moment-imp": {
+   "title": "Moment is Important: Language-Based Video Moment Retrieval via Adversarial Learning",
+   "venue": "ACM MM 2021",
+   "year": 2021,
+   "tags": [
+    "vmr"
+   ]
+  },
+  "strong": {
+   "title": "STRONG: Spatio-Temporal Reinforcement Learning for Cross-Modal Video Moment Localization",
+   "venue": "ICCV 2021",
+   "year": 2021,
+   "tags": [
+    "vmr"
+   ]
+  },
+  "adv-vmr": {
+   "title": "Adversarial VMR: Video Moment Retrieval by Jointly Modeling Ranking and Localization",
+   "venue": "ACM MM 2021",
+   "year": 2021,
+   "tags": [
+    "vmr"
+   ]
+  },
+  "pz-vmr": {
+   "title": "Prompt-based Zero-shot Video Moment Retrieval",
+   "venue": "ACM MM 2022",
+   "year": 2022,
+   "tags": [
+    "vmr"
+   ]
+  },
+  "are-bin": {
+   "title": "Are Binary Annotations Sufficient? Hierarchical Uncertainty-based Active Learning for VMR",
+   "venue": "CVPR 2023",
+   "year": 2023,
+   "tags": [
+    "vmr"
+   ]
+  },
+  "tinyvim": {
+   "title": "TinyViM: Frequency Decoupling for Tiny Hybrid Vision Mamba (WRONG MATCH — not VMR/TSG; exclude & re-resolve)",
+   "venue": "excluded",
+   "year": 2024,
+   "tags": [
+    "vmr"
+   ]
   }
  },
  "benchmarks": [
@@ -2431,5 +2614,228 @@ window.LEADERBOARD_DATA = {
    ]
   }
  ],
- "imported": []
+ "imported": [],
+ "unavailable": [
+  {
+   "id": "scdm",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "hidden-tsg",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "sscs",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "off-shelf",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "bg-aware",
+   "code": "bad-download",
+   "failReason": "Fetch only returned an arXiv template override page (HTML render unavailable / ID needs verification). Re-fetch via ar5iv.labs.arxiv.org or the venue page.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "g2l",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "diffvmr",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "qvhighlights"
+   ]
+  },
+  {
+   "id": "scanet",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "hev",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "ego4d-nlq",
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "unc-guid",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta",
+    "activitynet-captions"
+   ]
+  },
+  {
+   "id": "egoexo",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "ego4d-nlq"
+   ]
+  },
+  {
+   "id": "pt2span",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "qvhighlights",
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "beyond-c",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta",
+    "qvhighlights"
+   ]
+  },
+  {
+   "id": "ev-chain",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "cva",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "sink-tok",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "mitig-gap",
+   "code": "image-table",
+   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "hitea",
+   "code": "no-arxiv",
+   "failReason": "No arXiv version — paper lives on its venue platform. Fetch the number-bearing table from OpenReview / ACM DL / Springer and add the row.",
+   "benchmarks": [
+    "qvhighlights",
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "kda",
+   "code": "no-arxiv",
+   "failReason": "No arXiv version — paper lives on its venue platform. Fetch the number-bearing table from OpenReview / ACM DL / Springer and add the row.",
+   "benchmarks": [
+    "charades-sta",
+    "qvhighlights"
+   ]
+  },
+  {
+   "id": "confdiff",
+   "code": "no-arxiv",
+   "failReason": "No arXiv version — paper lives on its venue platform. Fetch the number-bearing table from OpenReview / ACM DL / Springer and add the row.",
+   "benchmarks": [
+    "charades-sta",
+    "qvhighlights"
+   ]
+  },
+  {
+   "id": "moment-imp",
+   "code": "no-arxiv",
+   "failReason": "No arXiv version — paper lives on its venue platform. Fetch the number-bearing table from OpenReview / ACM DL / Springer and add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "strong",
+   "code": "no-arxiv",
+   "failReason": "No arXiv version — paper lives on its venue platform. Fetch the number-bearing table from OpenReview / ACM DL / Springer and add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "adv-vmr",
+   "code": "no-arxiv",
+   "failReason": "No arXiv version — paper lives on its venue platform. Fetch the number-bearing table from OpenReview / ACM DL / Springer and add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "pz-vmr",
+   "code": "no-arxiv",
+   "failReason": "No arXiv version — paper lives on its venue platform. Fetch the number-bearing table from OpenReview / ACM DL / Springer and add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "are-bin",
+   "code": "no-arxiv",
+   "failReason": "No arXiv version — paper lives on its venue platform. Fetch the number-bearing table from OpenReview / ACM DL / Springer and add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "zs-blip",
+   "code": "no-arxiv",
+   "failReason": "No arXiv version — paper lives on its venue platform. Fetch the number-bearing table from OpenReview / ACM DL / Springer and add the row.",
+   "benchmarks": [
+    "charades-sta"
+   ]
+  },
+  {
+   "id": "tinyvim",
+   "code": "wrong-match",
+   "failReason": "Resolved arXiv ID (2411.17473) is an unrelated paper (TinyViM — not VMR/TSG). Discard this mapping and re-resolve the vault note's true arXiv ID.",
+   "benchmarks": []
+  }
+ ]
 };

@@ -252,7 +252,12 @@
     state[id] = st;
     const metricById = Object.fromEntries(bench.metrics.map((m) => [m.id, m]));
 
-    let rows = sortRows(bench.rows, st.sortMetric, st.dir);
+    // unavailable papers (not yet extracted) appear as rows at the bottom (non-mutating)
+    const gapRows = (DATA.unavailable || [])
+      .filter((u) => u.benchmarks.includes(id))
+      .map((u) => ({ method: u.id, values: {}, failed: u.code, note: u.failReason }));
+    let rows = sortRows(bench.rows.concat(gapRows), st.sortMetric, st.dir);
+    const gapCount = gapRows.length;
     let searchTerm = "";
     const imported = (DATA.imported || []).filter((r) => r.benchmark === id);
 
@@ -358,6 +363,7 @@
           </table>
         </div>
 
+        <div class="gaps" id="gaps"></div>
         <div id="imported"></div>
       </div>`;
 
@@ -386,6 +392,7 @@
         if (r.size) tags.push(esc(r.size));
         if (r.setting) tags.push(`<span class="tag ${esc(r.setting)}">${esc(r.setting)}</span>`);
         if (paper) tags.push(`<span class="tag venue">${esc(paper.venue)} ${paper.year}</span>`);
+        if (r.failed) tags.push(`<span class="tag failed">⚠ no numbers — pending</span>`);
         for (const t of TAG_ORDER) {
           if (!methodTags(r.method).includes(t)) continue;
           if (t === "zero-shot" && r.setting === "zero-shot") continue; // already shown as setting
@@ -393,7 +400,7 @@
         }
         const metricCells = bench.metrics.map((m) => {
           const v = r.values[m.id];
-          if (v == null) return `<td class="cell-metric empty">—</td>`;
+          if (v == null) return `<td class="cell-metric empty">-</td>`;
           const best = v === bestPer[m.id] ? " best" : "";
           return `<td class="cell-metric${best}" data-metric="${m.id}">${fmt(v)}</td>`;
         }).join("");
@@ -422,6 +429,19 @@
         </tr>`;
       }).join("");
     }
+
+    /* ---- gaps banner: papers not yet extracted ---- */
+    const gapsEl = document.getElementById("gaps");
+    if (gapCount) {
+      const reasons = [...new Set(gapRows.map((r) => r.failed || "pending"))];
+      gapsEl.innerHTML = `
+        <div class="gaps-banner">
+          <div class="gaps-head">⚠ &nbsp;${gapCount} paper${gapCount > 1 ? "s" : ""} listed${gapCount > 1 ? " have" : " has"} no performance data yet
+            <span class="gaps-sub">marker: <span class="tag failed">⚠ no numbers — pending</span></span></div>
+          <ul class="gaps-list">${gapRows.map((r) => `<li><b>${esc(methodName(r.method))}</b> — ${esc(r.note || "no numbers yet")} <span class="gaps-manual">needs manual review</span></li>`).join("")}</ul>
+        </div>`;
+    }
+
     drawTable();
 
     /* ---- interactions ---- */
@@ -522,6 +542,18 @@
       return `<li><b>${esc(b.name)}</b> (${esc(b.split)}) — ${esc(src)}.</li>`;
     }).join("");
 
+    // extraction gaps (methods listed but number-less), for the About page
+    const gapList = (DATA.unavailable || []).map((u) => {
+      const p = methodPaper(u.id);
+      const link = p && p.arxiv
+        ? `<a href="https://arxiv.org/abs/${esc(p.arxiv)}" target="_blank" rel="noopener">${esc(methodName(u.id))}</a>`
+        : `<span style="text-decoration:none;color:var(--ink)">${esc(methodName(u.id))}</span>`;
+      const where = (u.benchmarks && u.benchmarks.length)
+        ? `in <b>${u.benchmarks.map((b) => esc(DATA.benchmarks.find((x) => x.id === b)?.name || b)).join(", ")}</b>`
+        : "excluded (no table row yet)";
+      return `<li><span class="tag failed">${esc(u.code)}</span> ${link} — ${where}. ${esc(u.failReason)}</li>`;
+    }).join("");
+
     $view.innerHTML = `
       <div class="wrap about">
         <p class="eyebrow">About this board</p>
@@ -565,6 +597,18 @@
           each table to filter methods by tag; filters combine with search and
           column sorting.
         </p>
+
+        <h2>Data gaps — awaiting extraction</h2>
+        <p>
+          These are real VMR/TSG papers whose performance numbers could not be
+          machine-extracted yet. They still appear on their benchmark tables
+          marked <span class="tag failed">⚠ no numbers — pending</span> with
+          “-” where scores would go. Close a gap by fetching the venue page or
+          running <code>describe_image</code> on the paper's table image, then
+          add the row to <code>js/data.js</code>.
+        </p>
+        <ul class="gaps-list" style="margin-top:4px">${gapList}</ul>
+        <p><span class="gaps-manual">needs manual review</span></p>
 
         <h2>Adding results</h2>
         <p>

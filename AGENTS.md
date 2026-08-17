@@ -56,3 +56,63 @@ hard-won lessons from building and extending it.
   video grounding | VMR | VTG | temporal-aware | gridification`.
 - The candidate set is keyword hits over all paper notes (by the `Paper - ` prefix
   across the whole vault, plus any other channel), not the `topic/vmr` tag subset.
+
+# Data Extraction Pipeline (recommended workflow)
+
+Extract benchmark numbers from papers and land them in `js/data.js` as follows
+(this is the working process that produced the current 148 rows / 6 benchmarks):
+
+## Steps
+
+- **Inventory.** Identify candidate papers from every channel (Obsidian vault
+  notes, daily-paper feeds, venue pages). Match VMR/TSG by keywords across
+  title, aliases AND tags (see "Selection must be broad" above), not by
+  `topic/vmr` alone.
+- **Resolve a source.** Prefer `paper-url` → arXiv ID. If the note has no arXiv,
+  check the venue's own platform (OpenReview, ACM DL, Springer, CVF) — most
+  papers have *some* public page with a number-bearing table.
+- **Fetch the HTML.** Download `https://arxiv.org/html/<id>` with curl
+  (custom user-agent, ~0.7s sleep between requests). If the file is a stub
+  (< ~5 KB) or an arXiv template page, fall back to
+  `https://ar5iv.labs.arxiv.org/html/<id>`, then the venue page. Record any ID
+  that yields an unrelated paper (e.g. TinyViM instead of a VMR paper) as a
+  **wrong-match** — never guess numbers from a mismatched source.
+- **Parse tables.** Walk the HTML with a stdlib `HTMLParser` (strip
+  `<script>`/`<style>`), keep only `<table>`s whose text matches a
+  benchmark-name OR metric regex
+  (`QVHighlights|Charades|ActivityNet|TACoS|Ego4D|DiDeMo` and
+  `R1@|R@|mAP|mIoU|HIT@`), then align the 2-row headers (method · setting ·
+  per-benchmark metric columns) by hand.
+- **Image tables → use `describe_image`.** If the table is embedded as an image
+  or math-markup (no parseable `<table>`), do NOT skip it: run the
+  `describe_image` visual tool on the paper's table figure and transcribe the
+  cells into a row. Use image tables as the fallback for any paper the HTML
+  parser cannot crack.
+- **Map to the schema.** For each row keep (benchmark, split, metric, value) —
+  e.g. `qvhighlights/test/r1@0.5`. Track splits (test vs val) and settings
+  (zero-shot vs fine-tuned) explicitly on the row; never conflate a val split
+  with a test split.
+- **Cross-validate.** When two papers report the same baseline (e.g. TFVTG and
+  TAG both tabulate 2D-TAN/EMB/UniVTG), confirm values match before trusting
+  either. Accuracy beats completeness: if a cell can't be confidently mapped,
+  leave it out rather than guess.
+- **Validate & commit.** Run `node tools/validate_data.js`, then commit with the
+  conventional `type(scope): subject` format.
+
+## Graceful degradation — never silently drop a paper
+
+- Make every reasonable effort first (venue page, ar5iv, `describe_image` on
+  image tables). If numbers still can't be obtained, **the paper must still be
+  shown** on its benchmark table(s):
+  - keep its row with the method name and every drill-down link,
+  - put `-` in every score cell,
+  - tag the row `<span class="tag failed">⚠ no numbers — pending</span>`,
+  - list the failure reason on the row and in the About page's
+    "Data gaps — awaiting extraction" section,
+  - mark it <span class="gaps-manual">needs manual review</span> so a human
+    closes the gap later.
+- Record each gap in `data.js` under the top-level `unavailable` array with
+  `{ id, code, failReason, benchmarks }`. Valid codes:
+  `image-table`, `bad-download`, `no-arxiv`, `wrong-match`.
+- `wrong-match` entries must keep `benchmarks: []` (they never enter a table);
+  `tinyvim` is the canonical example.
