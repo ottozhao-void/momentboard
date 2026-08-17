@@ -355,6 +355,7 @@
           <span class="result-count" id="result-count"></span>
         </section>
         <section class="tagbar" id="tagbar" aria-label="Filter by tag"></section>
+        <div class="gaps" id="gaps"></div>
 
         <div class="table-wrap">
           <table class="leaderboard" id="board">
@@ -363,7 +364,6 @@
           </table>
         </div>
 
-        <div class="gaps" id="gaps"></div>
         <div id="imported"></div>
       </div>`;
 
@@ -433,12 +433,10 @@
     /* ---- gaps banner: papers not yet extracted ---- */
     const gapsEl = document.getElementById("gaps");
     if (gapCount) {
-      const reasons = [...new Set(gapRows.map((r) => r.failed || "pending"))];
       gapsEl.innerHTML = `
-        <div class="gaps-banner">
-          <div class="gaps-head">⚠ &nbsp;${gapCount} paper${gapCount > 1 ? "s" : ""} listed${gapCount > 1 ? " have" : " has"} no performance data yet
-            <span class="gaps-sub">marker: <span class="tag failed">⚠ no numbers — pending</span></span></div>
-          <ul class="gaps-list">${gapRows.map((r) => `<li><b>${esc(methodName(r.method))}</b> — ${esc(r.note || "no numbers yet")} <span class="gaps-manual">needs manual review</span></li>`).join("")}</ul>
+        <div class="gaps-banner" role="note">
+          <span class="gaps-head">⚠ ${gapCount} paper${gapCount > 1 ? "s" : ""} — no performance data yet</span>
+          <span class="gaps-sub">expand a <span class="tag failed">pending</span> row for its reason · <a href="#/about" class="gaps-link">full list</a> · <span class="gaps-manual">needs manual review</span></span>
         </div>`;
     }
 

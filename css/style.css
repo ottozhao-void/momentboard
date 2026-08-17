@@ -990,26 +990,31 @@ tr.row-paper .paper {
 /* ------------------------------------------------------------ unavailable / gaps */
 
 .tag.failed {
-  color: #9a3412;
-  border-color: #f0c9a8;
+  color: #7c2d12;
+  border-color: #d99a6c;
   background: #fff3e8;
-  /* keep amber family, but clearly a "warning" state */
+  font-weight: 600;
 }
 
 .gaps { margin-top: 22px; }
 
 .gaps-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
   border: 1px solid #f0c9a8;
   border-left: 3px solid var(--accent);
   background: var(--bg-alt);
   border-radius: 8px;
-  padding: 14px 16px;
-  font-size: 13px;
+  padding: 9px 14px;
+  font-size: 12.5px;
   color: var(--ink-2);
+  margin-bottom: 14px;
 }
 
-.gaps-head { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.02em; color: var(--ink); margin-bottom: 8px; }
-.gaps-sub { font-weight: 400; color: var(--ink-3); margin-left: 8px; }
+.gaps-head { font-family: var(--font-mono); font-weight: 700; font-size: 12px; letter-spacing: 0.02em; color: var(--ink); white-space: nowrap; }
+.gaps-sub { font-weight: 400; color: var(--ink-2); display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: 6px; }
 
 .gaps-list { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
 .gaps-list li { line-height: 1.5; }
@@ -1026,3 +1031,8 @@ tr.row-paper .paper {
   margin-left: 6px;
   white-space: nowrap;
 }
+
+/* gaps banner: compact single-line summary */
+.gaps-banner { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
+.gaps-banner .gaps-link { color: var(--accent-deep); }
+.cell-metric.empty { color: var(--ink-3); opacity: 0.85; }
