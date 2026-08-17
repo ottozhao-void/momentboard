@@ -1,44 +1,76 @@
-# Manual Performance Entry — Implementation Plan
+# Manual Performance Entry — Implementation Plan (v2: server sync + editing)
 
-Goal: let Otto record benchmark scores by hand while reading a paper, via a
-button that opens a minimal, polished modal form. A previous heavier attempt
-(edit-mode, toasts, home-page SOTA merge) was reverted; this plan keeps the
-feature lean and the published dataset untouched.
+Goal: let Otto record, correct and persist benchmark scores while reading
+papers. v1 shipped a browser-local form (localStorage only). v2 adds
+**server-side persistence** (self-hosted on this machine, Tailscale-reachable)
+and **editing of every entry** — including published rows, so extraction
+errors can be fixed in the UI instead of editing `js/data.js` by hand.
 
-## Design
+## Hosting decision (confirmed by Otto)
 
-- **Entry point** — an "Add result" button (＋ icon) in the benchmark-page
-  toolbar. One place, contextually where numbers are compared.
-- **Modal** — native `<dialog>` injected by app.js: free focus trap, Esc to
-  close, backdrop blur, minimal card (head / scrollable body / foot).
-- **Fields** — method name (required), benchmark (select, defaults to the
-  current page), setting (fine-tuned / zero-shot segmented control), paper or
-  source (optional; bare arXiv IDs auto-link), note (optional), plus one score
-  input per metric of the chosen benchmark, grouped like the table headers
-  (blank = not reported, 0–100 validation).
-- **Persistence** — localStorage key `momentboard:manual:v1` (versioned
-  envelope). `js/data.js` is never touched: the published dataset stays the
-  single source of truth; manual entries are private scratch.
-- **Table** — manual rows merge into the sorted/ranked table with a dashed
-  amber `manual` tag; the expandable row shows source, added date and a
-  "remove entry" control. Freshly saved rows flash amber and scroll into view.
-- **Export** — an "export JSON" ghost button appears in the toolbar while any
-  entry exists and downloads `momentboard-manual-entries.json`, the bridge for
-  merging rows into `js/data.js` later.
-- **Home page** — unchanged: timeline, SOTA callout and stats stay
-  published-only, so private entries never masquerade as the field's state.
+- **Server runs on this machine (`openclaw`)** on the Tailscale network, zero
+  dependencies (Node stdlib only).
+- GitHub Pages stays the public static frontend; its pages call the Tailscale
+  API via CORS. When the server is unreachable (off-network, `file://`), the
+  frontend degrades to a localStorage fallback with an explicit status chip.
 
-## Files
+## Backend — `server/server.js`
 
-- `js/app.js` — `manualStore` (load/add/remove), modal builder, benchmark-page
-  integration (toolbar, rows, remove, flash, export), About-page copy.
-- `css/style.css` — `.btn`, `.toolbar-actions`, `.tag.manual`, `.modal`,
-  form fields, segmented control, score grid; tokens (`--shadow-modal`,
-  `--danger`, `--chevron`) added to both themes.
-- `README.md` / `AGENTS.md` — document the quick-entry workflow.
+- Single zero-dependency Node process (node:http/fs/path/url/crypto).
+- Serves the static site (same origin) **and** a REST API:
+  - `GET /api/health` → `{ ok, entries }` (frontend detection)
+  - `GET /api/entries` → `{ version, entries }`
+  - `POST /api/entries` → create (server keeps client id)
+  - `PUT /api/entries/:id` → update
+  - `DELETE /api/entries/:id` → delete
+  - Mutations return the full entries array so clients stay in sync.
+- Persistence: atomic writes to `server/entries.json` (tmp + rename), plus a
+  `.bak` before each save. Body size cap, path-traversal guard, CORS
+  (`*` by default, restrictable via `CORS_ORIGINS` env), `HOST`/`PORT` env
+  (default 0.0.0.0:8787). Personal tool on Tailscale — no auth by design.
+
+## Entry model
+
+- `kind: "manual"` — a brand-new row created via the form:
+  `{ id, kind, benchmark, method, setting, paper, note, values, added, updated }`
+- `kind: "override"` — a correction of an existing published row:
+  `{ id, kind, benchmark, target: { method, name }, values, note, updated }`
+  Keyed by `benchmark|method|name` (name disambiguates rows like `XML`/`XML+`).
+  Rendering layers overrides on top of `data.js` rows without rewriting them.
+
+## Frontend — `js/app.js`
+
+- **Sync store** replaces the localStorage-only store:
+  - Config `API_BASE`: `window.MOMENTBOARD_API` override, else `""` (same
+    origin) for localhost/openclaw, else `http://openclaw:8787`; `null` on
+    `file://`.
+  - `init()` fetches `/api/entries` (2 s timeout) → `mode: "server"`; on
+    failure → `mode: "local"` + localStorage. `add/update/remove` hit the
+    server in server mode, localStorage in local mode.
+  - Page renders instantly (published-only), then re-renders when sync
+    completes (existing `refreshCurrent` hook). Home stays published-only.
+- **Status chip** in the toolbar: `● synced · server` vs `○ local only`.
+- **Edit / correct** on every expanded row:
+  - Manual rows: `edit` (modal prefilled, method editable, benchmark locked)
+    + `remove`.
+  - Published rows: `edit` → "Correct result" modal (method/benchmark locked,
+    banner explains it overrides the published value) → upserts an override;
+    `revert` removes an existing override. Corrected rows get a `corrected` tag.
+  - Manual/override edits use the same modal in different modes (fields
+    hidden per mode).
+- **Export JSON** button keeps working (downloads all server/local entries).
+
+## Merge loop — `tools/merge_entries.js`
+
+- Reads `server/entries.json`, applies overrides onto matching `data.js` rows
+  (replacing `values`), and appends manual entries as new rows + `methods`
+  entries (so `validate_data.js` passes). Writes back `data.js` preserving
+  JSON formatting. This is how corrections become published permanently.
 
 ## Validation
 
-- `node --check js/app.js`
-- `node tools/validate_data.js` (data.js untouched, must still pass)
-- Manual browser pass: open modal, save, check row/tag/export/remove, dark mode.
+- `node --check js/app.js`, `node --check server/server.js`,
+  `node tools/validate_data.js`, `node tools/merge_entries.js --check`
+- Headless-Chromium E2E against a running server: add manual entry → appears;
+  edit published row (override) → corrected value shown + tag; revert; edit
+  manual; delete; server-down → local fallback + status chip; reload persists.
