@@ -75,9 +75,9 @@ server (this machine on your Tailscale network, `server/server.js`) and
 appear on the table tagged `manual`. If the server is unreachable the
 browser falls back to localStorage and the toolbar shows `local only`.
 
-**Fixing extraction errors** — expand any row and choose **edit** to correct
-its scores. The fix is stored as an *override* on the server, layered on top
-of the published value and tagged `corrected`; **revert** goes back to the
+**Fixing extraction errors** — choose **edit** on a row to correct its
+scores. The fix is stored as an *override* on the server, layered on top of
+the published value and tagged `corrected`; **revert** goes back to the
 published number. Manual entries can be edited or removed the same way.
 
 **Publishing** — run `tools/merge_entries.js` to fold server overrides and

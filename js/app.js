@@ -291,14 +291,6 @@
     });
   }
 
-  // bare arXiv ids ("2404.00801" / "arXiv:2404.00801") become links
-  function manualPaperLink(paper) {
-    const m = String(paper).trim().match(/^(?:arxiv\s*[:#]?\s*)?(\d{4}\.\d{4,5})$/i);
-    return m
-      ? `<a href="https://arxiv.org/abs/${m[1]}" target="_blank" rel="noopener">arXiv:${m[1]} ↗</a>`
-      : esc(paper);
-  }
-
   function exportManualEntries() {
     const payload = {
       app: "momentboard",
@@ -675,8 +667,8 @@
           <p class="hero-sub">
             Method rankings for temporal sentence grounding and video moment
             retrieval, compiled from published results across ${DATA.benchmarks.length}
-            benchmarks. Sort any column, expand any row for the paper behind
-            the number.
+            benchmarks. Sort any column, or open the paper or edit a result
+            right from a row.
           </p>
           <div class="hero-stats">
             <div class="stat"><div class="stat-value">${DATA.benchmarks.length}</div><div class="stat-label">Benchmarks</div></div>
@@ -813,8 +805,6 @@
       }).join("")}
     </tr>`;
 
-    const metricCols = bench.metrics.length + 3;
-
     $view.innerHTML = `
       <div class="wrap">
         <section class="bench-head">
@@ -897,44 +887,41 @@
         const rankBadge = rank <= 3
           ? `<span class="rank-badge rank-${rank}">${rank}</span>`
           : `<span class="rank-badge">${rank}</span>`;
-        const rowActions = r.manual
-          ? `<div class="paper-actions">
-              <button type="button" class="row-action" data-edit-manual="${esc(r.method)}">edit</button>
-              <button type="button" class="row-action is-danger" data-remove-manual="${esc(r.method)}">remove</button>
-            </div>`
-          : `<div class="paper-actions">
-              <button type="button" class="row-action" data-edit-override="${esc(rowKey(id, r.method, r.name))}">${r.corrected ? "edit correction" : "edit"}</button>
-              ${r.corrected ? `<button type="button" class="row-action is-danger" data-revert-override="${esc(r.overrideId)}">revert</button>` : ""}
-            </div>`;
-        const corrNote = r.corrected
-          ? `<div class="correction-note">overrides the published value${r.correctedAt ? " · " + esc(fmtDate(r.correctedAt)) : ""}${r.correctionNote ? " · " + esc(r.correctionNote) : ""}</div>`
-          : "";
-        const paperHtml = r.manual
-          ? `<div class="paper">
-              <div class="paper-title">${esc(methodName(r))} — manual entry</div>
-              <div class="paper-meta">${r.paper ? manualPaperLink(r.paper) + " · " : ""}added ${esc(fmtDate(r.added))}${r.note ? " · " + esc(r.note) : ""}</div>
-              ${rowActions}
-            </div>`
-          : `<div class="paper">
-              <div class="paper-title">${esc(paper ? paper.title : "Paper details unavailable")}</div>
-              <div class="paper-meta">${esc(paperLink(paper))}${r.note ? " · " + esc(r.note) : ""}${paper && paper.arxiv ? ` · <a href="https://arxiv.org/abs/${esc(paper.arxiv)}" target="_blank" rel="noopener">open paper ↗</a>` : ""}</div>
-              ${corrNote}
-              ${rowActions}
-            </div>`;
+        // inline row actions: open paper · edit · (remove/revert for local rows)
+        const openLink = r.manual
+          ? (() => {
+              const s = String(r.paper || "").trim();
+              const m = s.match(/^(?:arxiv\s*[:#]?\s*)?(\d{4}\.\d{4,5})$/i);
+              if (m) return `<a class="row-action" href="https://arxiv.org/abs/${m[1]}" target="_blank" rel="noopener">open paper</a>`;
+              if (/^https?:\/\//i.test(s)) return `<a class="row-action" href="${esc(s)}" target="_blank" rel="noopener">open paper</a>`;
+              return "";
+            })()
+          : (paper && (paper.arxiv || paper.url))
+            ? `<a class="row-action" href="${esc(paper.arxiv ? "https://arxiv.org/abs/" + paper.arxiv : paper.url)}" target="_blank" rel="noopener">open paper</a>`
+            : "";
+        const actions = [];
+        if (openLink) actions.push(openLink);
+        if (r.manual) {
+          actions.push(`<button type="button" class="row-action" data-edit-manual="${esc(r.method)}">edit</button>`);
+          actions.push(`<button type="button" class="row-action is-danger" data-remove-manual="${esc(r.method)}">remove</button>`);
+        } else {
+          actions.push(`<button type="button" class="row-action" data-edit-override="${esc(rowKey(id, r.method, r.name))}">edit</button>`);
+          if (r.corrected) actions.push(`<button type="button" class="row-action is-danger" data-revert-override="${esc(r.overrideId)}">revert</button>`);
+        }
+        const actionsHtml = actions.length ? `<span class="row-actions">${actions.join("")}</span>` : "";
+        const tip = r.manual ? (r.note || "") : (r.corrected ? (r.correctionNote || "corrected in the UI") : (r.failed ? r.note : ""));
+        const nameTip = tip ? ` title="${esc(tip)}"` : "";
         return `
-        <tr class="row-method" role="button" tabindex="0" aria-expanded="false" data-idx="${i}" data-method="${esc(r.method)}" data-key="${esc(rowKey(id, r.method, r.name))}">
+        <tr class="row-method" data-method="${esc(r.method)}" data-key="${esc(rowKey(id, r.method, r.name))}">
           <td class="col-rank">${rankBadge}</td>
           <td class="col-method" colspan="2">
             <div class="cell-method">
-              <span class="method-name">${esc(methodName(r))}</span>
+              <span class="method-name"${nameTip}>${esc(methodName(r))}</span>
               <span class="method-tags">${tags.join("")}</span>
-              <span class="chevron" aria-hidden="true">▶</span>
+              ${actionsHtml}
             </div>
           </td>
           ${metricCells}
-        </tr>
-        <tr class="row-paper" hidden>
-          <td colspan="${metricCols}">${paperHtml}</td>
         </tr>`;
       }).join("");
     }
@@ -945,7 +932,7 @@
       gapsEl.innerHTML = `
         <div class="gaps-banner" role="note">
           <span class="gaps-head">⚠ ${gapCount} paper${gapCount > 1 ? "s" : ""} — no performance data yet</span>
-          <span class="gaps-sub">expand a <span class="tag failed">pending</span> row for its reason · <a href="#/about" class="gaps-link">full list</a> · <span class="gaps-manual">needs manual review</span></span>
+          <span class="gaps-sub">hover a <span class="tag failed">pending</span> row for its reason · <a href="#/about" class="gaps-link">full list</a> · <span class="gaps-manual">needs manual review</span></span>
         </div>`;
     }
 
@@ -986,22 +973,7 @@
         });
         return;
       }
-      const tr = e.target.closest("tr.row-method");
-      if (tr) toggleRow(tr);
     });
-    tbody.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        const tr = e.target.closest("tr.row-method");
-        if (tr) { e.preventDefault(); toggleRow(tr); }
-      }
-    });
-
-    function toggleRow(tr) {
-      const paperRow = tr.nextElementSibling;
-      const open = tr.classList.toggle("open");
-      paperRow.hidden = !open;
-      tr.setAttribute("aria-expanded", open ? "true" : "false");
-    }
 
     document.querySelectorAll("th[data-metric]").forEach((th) => {
       th.addEventListener("click", () => {
@@ -1171,8 +1143,8 @@
           and entries stay in this browser until it is reachable again.
         </p>
         <p style="margin-top:12px">
-          <b>Fixing extraction errors</b> — expand any row and choose
-          <b>edit</b> to correct its scores. The fix is stored as an
+          <b>Fixing extraction errors</b> — choose <b>edit</b> on a row to
+          correct its scores. The fix is stored as an
           <em>override</em> on the server, layered on top of the published
           value and tagged <span class="tag corrected">corrected</span>; use
           <b>revert</b> to go back to the published number. Manual entries can

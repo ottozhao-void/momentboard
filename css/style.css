@@ -682,7 +682,6 @@ table.leaderboard tbody tr:last-child { border-bottom: 0; }
 
 table.leaderboard tbody tr.row-method:hover {
   background: var(--bg-alt);
-  cursor: pointer;
 }
 
 table.leaderboard td {
@@ -754,17 +753,41 @@ td.col-rank .rank-badge.rank-3 { color: var(--ink); background: var(--badge-bg);
 .tag.zero-shot { color: var(--ink-3); border-style: dashed; }
 .tag.fine-tuned { color: var(--accent-deep); border-color: var(--accent-line); background: var(--accent-soft); }
 
-.chevron {
+/* inline row actions (open paper · edit · remove/revert) */
+.row-actions {
   margin-left: auto;
-  color: var(--ink-2);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  transition: transform 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
 }
 
-tr.row-method:hover .chevron { color: var(--accent); }
+.row-actions .row-action {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--ink-2);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 2px 9px;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
 
-tr.row-method.open .chevron { transform: rotate(90deg); color: var(--accent); }
+.row-actions .row-action:hover {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+}
+
+.row-actions .row-action.is-danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+}
 
 /* metric cells */
 td.cell-metric { font-family: var(--font-mono); font-size: 13.5px; color: var(--ink-2); }
@@ -776,40 +799,6 @@ td.cell-metric.best {
 }
 
 td.cell-metric.empty { color: var(--line-strong); }
-
-/* expandable paper row */
-tr.row-paper td {
-  background: var(--bg-alt);
-  padding: 4px 18px 14px;
-  text-align: left;
-}
-
-tr.row-paper .paper {
-  border-left: 2px solid var(--accent-line);
-  padding-left: 14px;
-}
-
-.paper-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ink);
-  margin-bottom: 2px;
-}
-
-.paper-meta {
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--ink-3);
-  letter-spacing: 0.03em;
-}
-
-.paper-meta a {
-  color: var(--accent-deep);
-  text-decoration: none;
-  border-bottom: 1px solid var(--accent-line);
-}
-
-.paper-meta a:hover { border-bottom-color: var(--accent); }
 
 /* imported rows */
 .imported-note {
@@ -1131,30 +1120,7 @@ tr.row-paper .paper {
   border: 1.5px dashed var(--accent);
 }
 
-/* row actions in the expanded paper panel */
-.paper-actions {
-  display: flex;
-  gap: 14px;
-  margin-top: 8px;
-}
-
-.row-action {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-decoration: underline;
-  color: var(--ink-3);
-  padding: 0;
-}
-
-.row-action:hover { color: var(--accent-deep); }
-.row-action.is-danger:hover { color: var(--danger); }
-
-.correction-note {
-  margin-top: 4px;
-  font-size: 12.5px;
-  color: var(--accent-deep);
-}
+/* (row-action button styling lives with .row-actions above) */
 
 .override-banner {
   border: 1px solid var(--accent-line);
