@@ -1,10 +1,15 @@
+# Systemd system unit for the Momentboard server.
+# Install:  sudo cp server/momentboard.service /etc/systemd/system/ && sudo systemctl daemon-reload
+# Enable:   sudo systemctl enable --now momentboard
 [Unit]
 Description=Momentboard — static site + persistence API
-After=network-online.target tailscaled.service
+Documentation=file:/home/ubuntu/tsg-leaderboard/server/README.md
+After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
+User=ubuntu
 WorkingDirectory=/home/ubuntu/tsg-leaderboard
 Environment=PORT=8080
 Environment=HOST=127.0.0.1
@@ -15,4 +20,4 @@ KillSignal=SIGTERM
 TimeoutStopSec=10
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target

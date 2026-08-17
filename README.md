@@ -115,8 +115,8 @@ the extractor's generic values still need a human to confirm metric and paper.
 ```
 
 The server persists entries/corrections to `server/entries.json` with atomic
-writes. On this machine it runs as a systemd user service
-(`~/.config/systemd/user/momentboard.service`). The server binds localhost
+writes. On this machine it runs as a **systemd system service**
+(`momentboard.service`, auto-start at boot). The server binds localhost
 only and is reached over **SSH port forwarding**:
 
 ```bash

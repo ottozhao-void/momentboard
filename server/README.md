@@ -15,17 +15,19 @@ on the LAN, Tailnet or internet.
 ssh -L 8080:localhost:8080 <host> # then open http://localhost:8080
 ```
 
-The server is installed here as the user service `momentboard.service`:
+The server is installed here as a **systemd system service** (auto-start at
+boot, auto-restart):
 
 ```bash
-systemctl --user enable --now momentboard     # already enabled here
-systemctl --user status momentboard
-journalctl --user -u momentboard -f           # logs
+sudo cp server/momentboard.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now momentboard      # already done here
+systemctl status momentboard
+journalctl -u momentboard -f                 # logs
 ```
 
-The unit file is `server/momentboard.service` (copy to
-`~/.config/systemd/user/` on other hosts; it sets `PORT=8080` and
-`HOST=127.0.0.1`).
+The unit file is `server/momentboard.service` (runs as `ubuntu`, sets
+`PORT=8080` and `HOST=127.0.0.1`).
 
 ## API
 
