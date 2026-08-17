@@ -153,42 +153,120 @@
     });
   }
 
-  /* ---------------------------------------------------------- manual entry */
+  /* ---------------------------------------------------------- manual entry + server sync */
 
-  const MANUAL_KEY = "momentboard:manual:v1";
+  const MANUAL_KEY = "momentboard:manual:v2";
 
-  const manualStore = {
+  // Where the persistence server lives:
+  //   ""   -> same origin: site served by server/server.js on openclaw:8080
+  //           (http://openclaw:8080 or https://openclaw.tailda1b50.ts.net/momentboard)
+  //   https://openclaw.tailda1b50.ts.net/momentboard -> GitHub Pages copy (HTTPS)
+  //   null -> file:// / unknown: local only
+  // Override at any time: window.MOMENTBOARD_API = "http://…";
+  const TAILNET_FQDN = "openclaw.tailda1b50.ts.net";
+  const API_BASE = (() => {
+    try {
+      if (window.MOMENTBOARD_API) return window.MOMENTBOARD_API;
+      if (location.protocol === "file:") return null;
+      const local = ["localhost", "127.0.0.1", "::1", "openclaw", TAILNET_FQDN].includes(location.hostname);
+      return local ? "" : "https://" + TAILNET_FQDN + "/momentboard";
+    } catch (e) { return null; }
+  })();
+
+  async function apiFetch(path, options) {
+    // same-origin (API_BASE === "") uses a RELATIVE path so sub-path hosting
+    // (e.g. /momentboard on the tailnet) resolves correctly; otherwise absolute.
+    const url = API_BASE === "" ? path.replace(/^\/+/, "") : (API_BASE || "") + path;
+    const init = Object.assign({ signal: AbortSignal.timeout(3000) }, options || {});
+    const res = await fetch(url, init);
+    if (!res.ok) throw new Error("api " + res.status);
+    return res.json();
+  }
+
+  // identity of a published row within a benchmark (name disambiguates XML / XML+)
+  const rowKey = (benchId, method, name) => `${benchId}|${method || ""}|${name || ""}`;
+  const decodeRowKey = (key) => {
+    const parts = String(key).split("|");
+    return [parts[0] || "", parts[1] || "", parts[2] || ""];
+  };
+  const benchInfo = (benchId) => {
+    const b = DATA.benchmarks.find((x) => x.id === benchId);
+    return b ? { name: b.name, split: b.split } : { name: benchId, split: "" };
+  };
+  const findPublishedRow = (benchId, method, name) => {
+    const b = DATA.benchmarks.find((x) => x.id === benchId);
+    return b ? b.rows.find((r) => r.method === method && (r.name || "") === (name || "")) || null : null;
+  };
+
+  const STORE = {
     entries: [],
-    load() {
+    mode: "local", // "server" | "local"
+    async init() {
+      if (API_BASE === null) { this.loadLocal(); return this.mode; }
+      try {
+        const data = await apiFetch("/api/entries", { method: "GET" });
+        this.entries = Array.isArray(data.entries) ? data.entries : [];
+        this.mode = "server";
+      } catch (e) {
+        this.mode = "local";
+        this.loadLocal();
+      }
+      return this.mode;
+    },
+    loadLocal() {
       try {
         const raw = JSON.parse(localStorage.getItem(MANUAL_KEY) || "null");
         this.entries = raw && Array.isArray(raw.entries) ? raw.entries : [];
       } catch (e) { this.entries = []; }
     },
-    persist() {
-      try {
-        localStorage.setItem(MANUAL_KEY, JSON.stringify({ version: 1, entries: this.entries }));
-      } catch (e) {}
+    persistLocal() {
+      try { localStorage.setItem(MANUAL_KEY, JSON.stringify({ version: 2, entries: this.entries })); } catch (e) {}
     },
-    add(entry) {
-      const id = "m-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6);
-      this.entries.push(Object.assign({ id }, entry));
-      this.persist();
-      return id;
+    async add(entry) {
+      const full = Object.assign(
+        { id: "m-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6) },
+        entry, { updated: new Date().toISOString() });
+      if (this.mode === "server") {
+        const data = await apiFetch("/api/entries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(full) });
+        this.entries = data.entries || this.entries;
+      } else {
+        this.entries.push(full);
+        this.persistLocal();
+      }
+      return full.id;
     },
-    remove(id) {
-      this.entries = this.entries.filter((e) => e.id !== id);
-      this.persist();
+    async update(id, patch) {
+      if (this.mode === "server") {
+        const data = await apiFetch("/api/entries/" + encodeURIComponent(id), {
+          method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) });
+        this.entries = data.entries || this.entries;
+      } else {
+        const i = this.entries.findIndex((e) => e.id === id);
+        if (i >= 0) { this.entries[i] = Object.assign({}, this.entries[i], patch, { updated: new Date().toISOString() }); this.persistLocal(); }
+      }
+    },
+    async remove(id) {
+      if (this.mode === "server") {
+        const data = await apiFetch("/api/entries/" + encodeURIComponent(id), { method: "DELETE" });
+        this.entries = data.entries || this.entries;
+      } else {
+        this.entries = this.entries.filter((e) => e.id !== id);
+        this.persistLocal();
+      }
+    },
+    overrideFor(benchId, method, name) {
+      const key = rowKey(benchId, method, name);
+      return this.entries.find((e) => e.kind === "override"
+        && rowKey(e.benchmark, e.target && e.target.method, e.target && e.target.name) === key) || null;
     }
   };
-  manualStore.load();
 
-  // manual entries -> row shape, sanitized against the benchmark's metric ids
+  // manual entries (kind: manual) -> brand-new table rows
   function manualRowsFor(benchId) {
     const bench = DATA.benchmarks.find((b) => b.id === benchId);
     const ids = new Set((bench ? bench.metrics : []).map((m) => m.id));
-    return manualStore.entries
-      .filter((e) => e.benchmark === benchId)
+    return STORE.entries
+      .filter((e) => e.kind === "manual" && e.benchmark === benchId)
       .map((e) => ({
         method: e.id,
         name: e.method,
@@ -197,9 +275,24 @@
         setting: e.setting === "zero-shot" || e.setting === "fine-tuned" ? e.setting : "",
         note: e.note || "",
         paper: e.paper || "",
-        added: e.added || "",
+        added: e.added || (e.updated || "").slice(0, 10),
         manual: true
       }));
+  }
+
+  // corrections (kind: override) layered on top of published rows
+  function applyOverrides(benchId, baseRows) {
+    return baseRows.map((r) => {
+      const o = STORE.overrideFor(benchId, r.method, r.name);
+      if (!o) return r;
+      return Object.assign({}, r, {
+        values: Object.assign({}, o.values || {}),
+        corrected: true,
+        overrideId: o.id,
+        correctionNote: o.note || "",
+        correctedAt: (o.updated || "").slice(0, 10)
+      });
+    });
   }
 
   // bare arXiv ids ("2404.00801" / "arXiv:2404.00801") become links
@@ -213,23 +306,43 @@
   function exportManualEntries() {
     const payload = {
       app: "momentboard",
-      version: 1,
+      version: 2,
       exported: new Date().toISOString().slice(0, 10),
-      note: "Manual entries from the Add result form. Merge the rows into js/data.js to publish.",
-      entries: manualStore.entries
+      note: "Entries from the Add result / edit forms. Merge with tools/merge_entries.js into js/data.js to publish.",
+      entries: STORE.entries
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "momentboard-manual-entries.json";
+    a.download = "momentboard-entries.json";
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
 
+  function updateSyncStatus() {
+    const el = document.getElementById("sync-status");
+    if (!el) return;
+    if (STORE.mode === "server") {
+      el.innerHTML = `<span class="dot ok"></span>synced · server`;
+      el.title = "Entries persist on the momentboard server";
+    } else {
+      el.innerHTML = `<span class="dot warn"></span>local only`;
+      el.title = "Server unreachable — entries stay in this browser only";
+    }
+  }
+
+  function updateExportBtn() {
+    const btn = document.getElementById("export-json");
+    if (btn) btn.hidden = STORE.entries.length === 0;
+  }
+
   let refreshCurrent = null; // set by renderBenchmark; redraws the live table
   let manualDialog = null;
+  let modalMode = "add";     // "add" | "edit" | "override"
+  let modalId = null;        // entry id for "edit"
+  let modalTarget = null;    // {bench, method, name} for "override"
 
   function buildManualDialog() {
     const dlg = document.createElement("dialog");
@@ -247,11 +360,11 @@
         </button>
       </header>
       <form class="modal-body" id="manual-form" novalidate>
-        <div class="field">
+        <div class="field" id="m-method-field">
           <label for="m-method">Method name <span class="req">*</span></label>
           <input id="m-method" placeholder="e.g. MyMethod-7B" autocomplete="off">
         </div>
-        <div class="field-row">
+        <div class="field-row" id="m-row-field">
           <div class="field">
             <label for="m-bench">Benchmark</label>
             <select id="m-bench">
@@ -266,7 +379,8 @@
             </div>
           </div>
         </div>
-        <div class="field">
+        <div class="override-banner" id="m-banner" hidden></div>
+        <div class="field" id="m-paper-field">
           <label for="m-paper">Paper / source <span class="opt">optional</span></label>
           <input id="m-paper" placeholder="arXiv:XXXX.XXXXX, a title or a URL" autocomplete="off">
         </div>
@@ -285,23 +399,31 @@
       </form>
       <footer class="modal-foot">
         <button type="button" class="btn btn-ghost" id="m-cancel">Cancel</button>
-        <button type="submit" class="btn btn-primary" form="manual-form">Save entry</button>
+        <button type="submit" class="btn btn-primary" id="m-save" form="manual-form">Save entry</button>
       </footer>
     </div>`;
     document.body.appendChild(dlg);
 
     const form = dlg.querySelector("#manual-form");
+    const methodField = form.querySelector("#m-method-field");
     const methodInput = form.querySelector("#m-method");
+    const rowField = form.querySelector("#m-row-field");
     const benchSel = form.querySelector("#m-bench");
     const seg = form.querySelector(".seg");
+    const paperField = form.querySelector("#m-paper-field");
     const paperInput = form.querySelector("#m-paper");
     const noteInput = form.querySelector("#m-note");
+    const banner = form.querySelector("#m-banner");
     const scoresTitle = form.querySelector("#m-scores-title");
     const scoresGrid = form.querySelector("#m-scores-grid");
     const errorEl = form.querySelector("#m-error");
+    const titleEl = dlg.querySelector("#manual-title");
+    const eyebrowEl = dlg.querySelector(".modal-eyebrow");
+    const saveBtn = dlg.querySelector("#m-save");
 
-    function renderScores(benchId) {
+    function renderScores(benchId, values) {
       const bench = DATA.benchmarks.find((b) => b.id === benchId);
+      if (!bench) { scoresTitle.textContent = ""; scoresGrid.innerHTML = ""; return; }
       scoresTitle.textContent = `Scores · ${bench.name} (${bench.split})`;
       const groups = [];
       for (const m of bench.metrics) if (!groups.includes(m.group)) groups.push(m.group);
@@ -313,7 +435,12 @@
             <input type="text" inputmode="decimal" placeholder="–" data-metric="${esc(m.id)}" autocomplete="off">
           </label>`).join("")}
       `).join("");
+      for (const [mid, v] of Object.entries(values || {})) {
+        const inp = scoresGrid.querySelector(`input[data-metric="${esc(mid)}"]`);
+        if (inp && typeof v === "number") inp.value = v;
+      }
     }
+    dlg._renderScores = renderScores;
 
     function showError(msg) {
       errorEl.textContent = msg;
@@ -327,7 +454,13 @@
       methodInput.removeAttribute("aria-invalid");
       seg.querySelectorAll("button").forEach((b) =>
         b.setAttribute("aria-pressed", String(b.dataset.setting === "fine-tuned")));
-      renderScores(benchSel.value);
+      // restore default visibility for next open
+      methodField.hidden = false;
+      rowField.hidden = false;
+      paperField.hidden = false;
+      banner.hidden = true;
+      benchSel.disabled = false;
+      renderScores(benchSel.value, {});
     }
 
     const closeDialog = () => {
@@ -335,7 +468,7 @@
       else dlg.removeAttribute("open");
     };
 
-    benchSel.addEventListener("change", () => { errorEl.hidden = true; renderScores(benchSel.value); });
+    benchSel.addEventListener("change", () => { errorEl.hidden = true; renderScores(benchSel.value, {}); });
 
     seg.addEventListener("click", (e) => {
       const btn = e.target.closest("button[data-setting]");
@@ -348,16 +481,8 @@
     dlg.addEventListener("click", (e) => { if (e.target === dlg) closeDialog(); });
     dlg.addEventListener("close", resetForm);
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const name = methodInput.value.trim();
-      if (!name) {
-        showError("Give the method a name.");
-        methodInput.setAttribute("aria-invalid", "true");
-        methodInput.focus();
-        return;
-      }
-      methodInput.removeAttribute("aria-invalid");
       const values = {};
       let bad = null;
       for (const inp of scoresGrid.querySelectorAll("input[data-metric]")) {
@@ -377,40 +502,133 @@
         bad.focus();
         return;
       }
-      const entryId = manualStore.add({
-        benchmark: benchSel.value,
-        method: name,
-        setting: seg.querySelector("button[aria-pressed='true']").dataset.setting,
-        paper: paperInput.value.trim(),
-        note: noteInput.value.trim(),
-        values,
-        added: new Date().toISOString().slice(0, 10)
-      });
-      closeDialog(); // triggers resetForm via the close event
-      if (refreshCurrent) refreshCurrent();
-      updateExportBtn();
-      const tr = document.querySelector(`tr.row-method[data-method="${entryId}"]`);
-      if (tr) {
-        tr.classList.add("flash");
-        tr.scrollIntoView({ block: "center" });
+
+      const note = noteInput.value.trim();
+      let entryId = null;
+      try {
+        if (modalMode === "override") {
+          const o = STORE.overrideFor(modalTarget.bench, modalTarget.method, modalTarget.name);
+          if (o) { await STORE.update(o.id, { values, note }); entryId = null; }
+          else {
+            entryId = await STORE.add({ kind: "override", benchmark: modalTarget.bench,
+              target: { method: modalTarget.method, name: modalTarget.name || "" }, values, note });
+          }
+        } else {
+          if (!methodInput.value.trim()) {
+            showError("Give the method a name.");
+            methodInput.setAttribute("aria-invalid", "true");
+            methodInput.focus();
+            return;
+          }
+          methodInput.removeAttribute("aria-invalid");
+          const base = {
+            benchmark: benchSel.value,
+            setting: seg.querySelector("button[aria-pressed='true']").dataset.setting,
+            paper: paperInput.value.trim(),
+            note,
+            values
+          };
+          if (modalMode === "edit") {
+            await STORE.update(modalId, Object.assign({ method: methodInput.value.trim() }, base));
+            entryId = modalId;
+          } else {
+            entryId = await STORE.add(Object.assign(
+              { kind: "manual", method: methodInput.value.trim(), added: new Date().toISOString().slice(0, 10) }, base));
+          }
+        }
+      } catch (err) {
+        showError("Could not save — the server is unreachable. Check the sync status and try again.");
+        return;
       }
+
+      closeDialog(); // triggers resetForm via the close event
+      if (modalMode === "override") route();          // re-render: timeline shows corrected values
+      else if (refreshCurrent) refreshCurrent();      // manual add/edit: table refresh is enough
+      updateSyncStatus();
+      updateExportBtn();
+      const key = modalMode === "override"
+        ? rowKey(modalTarget.bench, modalTarget.method, modalTarget.name)
+        : (entryId ? `|${entryId}|` : "");
+      const sel = modalMode === "override" ? `[data-key="${esc(key)}"]` : `[data-method="${esc(entryId)}"]`;
+      const tr = document.querySelector(`tr.row-method${sel}`);
+      if (tr) { tr.classList.add("flash"); tr.scrollIntoView({ block: "center" }); }
     });
 
-    dlg._selectBench = (id) => { benchSel.value = id; renderScores(id); };
     return dlg;
   }
 
-  function openManualDialog(benchId) {
+  function openManualDialog(benchId, opts) {
+    opts = opts || {};
     if (!manualDialog) manualDialog = buildManualDialog();
-    manualDialog._selectBench(benchId);
-    if (typeof manualDialog.showModal === "function") manualDialog.showModal();
-    else manualDialog.setAttribute("open", "");
-    manualDialog.querySelector("#m-method").focus();
-  }
+    const dlg = manualDialog;
+    modalMode = opts.mode || "add";
+    modalId = opts.id || null;
+    modalTarget = opts.target || null;
 
-  function updateExportBtn() {
-    const btn = document.getElementById("export-json");
-    if (btn) btn.hidden = manualStore.entries.length === 0;
+    const form = dlg.querySelector("#manual-form");
+    const methodField = form.querySelector("#m-method-field");
+    const methodInput = form.querySelector("#m-method");
+    const rowField = form.querySelector("#m-row-field");
+    const benchSel = form.querySelector("#m-bench");
+    const seg = form.querySelector(".seg");
+    const paperField = form.querySelector("#m-paper-field");
+    const paperInput = form.querySelector("#m-paper");
+    const noteInput = form.querySelector("#m-note");
+    const banner = form.querySelector("#m-banner");
+    const titleEl = dlg.querySelector("#manual-title");
+    const eyebrowEl = dlg.querySelector(".modal-eyebrow");
+    const saveBtn = dlg.querySelector("#m-save");
+    const errorEl = form.querySelector("#m-error");
+
+    errorEl.hidden = true;
+    errorEl.textContent = "";
+    methodInput.removeAttribute("aria-invalid");
+
+    if (modalMode === "override") {
+      titleEl.textContent = "Correct result";
+      eyebrowEl.textContent = "Correction · overrides the published value";
+      saveBtn.textContent = "Save correction";
+      const info = benchInfo(modalTarget.bench);
+      const row = findPublishedRow(modalTarget.bench, modalTarget.method, modalTarget.name);
+      const o = STORE.overrideFor(modalTarget.bench, modalTarget.method, modalTarget.name);
+      const effective = (o ? o.values : (row ? row.values : {}));
+      methodField.hidden = true;
+      rowField.hidden = true;
+      paperField.hidden = true;
+      banner.hidden = false;
+      banner.innerHTML = `Correcting the published result for <b>${esc(methodName(row || { method: modalTarget.method, name: modalTarget.name }))}</b> · ${esc(info.name)} (${esc(info.split)})`;
+      benchSel.value = modalTarget.bench;
+      dlg._renderScores(modalTarget.bench, effective);
+      noteInput.value = (o && o.note) || "";
+    } else {
+      const isEdit = modalMode === "edit";
+      titleEl.textContent = isEdit ? "Edit entry" : "Add a result";
+      eyebrowEl.textContent = "Manual entry · synced to your server";
+      saveBtn.textContent = isEdit ? "Save changes" : "Save entry";
+      methodField.hidden = false;
+      rowField.hidden = false;
+      paperField.hidden = false;
+      banner.hidden = true;
+      benchSel.disabled = isEdit;
+      if (isEdit) {
+        const e = STORE.entries.find((x) => x.id === modalId) || {};
+        benchSel.value = e.benchmark || benchId;
+        methodInput.value = e.method || "";
+        seg.querySelectorAll("button").forEach((b) =>
+          b.setAttribute("aria-pressed", String(b.dataset.setting === ((e.setting || "fine-tuned")))));
+        paperInput.value = e.paper || "";
+        noteInput.value = e.note || "";
+        dlg._renderScores(benchSel.value, e.values || {});
+      } else {
+        benchSel.value = benchId;
+        dlg._renderScores(benchId, {});
+      }
+    }
+
+    if (typeof dlg.showModal === "function") dlg.showModal();
+    else dlg.setAttribute("open", "");
+    if (modalMode === "override") noteInput.focus();
+    else methodInput.focus();
   }
 
   /* ---------------------------------------------------------- home */
@@ -519,16 +737,17 @@
     const gapRows = (DATA.unavailable || [])
       .filter((u) => u.benchmarks.includes(id))
       .map((u) => ({ method: u.id, values: {}, failed: u.code, note: u.failReason }));
-    const computeRows = () => sortRows(bench.rows.concat(gapRows, manualRowsFor(id)), st.sortMetric, st.dir);
+    const computeRows = () => sortRows(applyOverrides(id, bench.rows).concat(gapRows, manualRowsFor(id)), st.sortMetric, st.dir);
     let rows = computeRows();
     const gapCount = gapRows.length;
     let searchTerm = "";
     const imported = (DATA.imported || []).filter((r) => r.benchmark === id);
     refreshCurrent = () => { rows = computeRows(); drawTable(); };
 
-    /* ---- timeline ---- */
-    const maxV = Math.max(...bench.rows.map((r) => r.values[pm.id] || 0));
-    const sorted = sortRows(bench.rows, pm.id, "desc").filter((r) => r.values[pm.id] != null);
+    /* ---- timeline (published rows + corrections, not manual scratch) ---- */
+    const timelineRows = applyOverrides(id, bench.rows);
+    const maxV = Math.max(...timelineRows.map((r) => r.values[pm.id] || 0));
+    const sorted = sortRows(timelineRows, pm.id, "desc").filter((r) => r.values[pm.id] != null);
     const top3 = sorted.slice(0, 3);
     const pct = (v) => Math.min(99.4, (v / maxV) * 100);
     const pctL = (v) => Math.max(8, Math.min(92, (v / maxV) * 100));
@@ -618,6 +837,7 @@
             <input type="search" id="search" placeholder="Filter methods…" aria-label="Filter methods">
           </div>
           <div class="toolbar-actions">
+            <span class="sync-status" id="sync-status" role="status"></span>
             <span class="result-count" id="result-count"></span>
             <button type="button" class="btn btn-ghost" id="export-json" hidden>export JSON</button>
             <button type="button" class="btn btn-primary" id="add-result">
@@ -665,6 +885,7 @@
         if (r.setting) tags.push(`<span class="tag ${esc(r.setting)}">${esc(r.setting)}</span>`);
         if (paper) tags.push(`<span class="tag venue">${esc(paper.venue)} ${paper.year}</span>`);
         if (r.manual) tags.push(`<span class="tag manual">manual</span>`);
+        if (r.corrected) tags.push(`<span class="tag corrected">corrected</span>`);
         if (r.failed) tags.push(`<span class="tag failed">⚠ no numbers — pending</span>`);
         for (const t of TAG_ORDER) {
           if (!methodTags(r.method).includes(t)) continue;
@@ -680,17 +901,32 @@
         const rankBadge = rank <= 3
           ? `<span class="rank-badge rank-${rank}">${rank}</span>`
           : `<span class="rank-badge">${rank}</span>`;
+        const rowActions = r.manual
+          ? `<div class="paper-actions">
+              <button type="button" class="row-action" data-edit-manual="${esc(r.method)}">edit</button>
+              <button type="button" class="row-action is-danger" data-remove-manual="${esc(r.method)}">remove</button>
+            </div>`
+          : `<div class="paper-actions">
+              <button type="button" class="row-action" data-edit-override="${esc(rowKey(id, r.method, r.name))}">${r.corrected ? "edit correction" : "edit"}</button>
+              ${r.corrected ? `<button type="button" class="row-action is-danger" data-revert-override="${esc(r.overrideId)}">revert</button>` : ""}
+            </div>`;
+        const corrNote = r.corrected
+          ? `<div class="correction-note">overrides the published value${r.correctedAt ? " · " + esc(fmtDate(r.correctedAt)) : ""}${r.correctionNote ? " · " + esc(r.correctionNote) : ""}</div>`
+          : "";
         const paperHtml = r.manual
           ? `<div class="paper">
               <div class="paper-title">${esc(methodName(r))} — manual entry</div>
-              <div class="paper-meta">${r.paper ? manualPaperLink(r.paper) + " · " : ""}added ${esc(fmtDate(r.added))}${r.note ? " · " + esc(r.note) : ""} · <button type="button" class="manual-remove" data-id="${esc(r.method)}">remove entry</button></div>
+              <div class="paper-meta">${r.paper ? manualPaperLink(r.paper) + " · " : ""}added ${esc(fmtDate(r.added))}${r.note ? " · " + esc(r.note) : ""}</div>
+              ${rowActions}
             </div>`
           : `<div class="paper">
               <div class="paper-title">${esc(paper ? paper.title : "Paper details unavailable")}</div>
               <div class="paper-meta">${esc(paperLink(paper))}${r.note ? " · " + esc(r.note) : ""}${paper && paper.arxiv ? ` · <a href="https://arxiv.org/abs/${esc(paper.arxiv)}" target="_blank" rel="noopener">open paper ↗</a>` : ""}</div>
+              ${corrNote}
+              ${rowActions}
             </div>`;
         return `
-        <tr class="row-method" role="button" tabindex="0" aria-expanded="false" data-idx="${i}" data-method="${esc(r.method)}">
+        <tr class="row-method" role="button" tabindex="0" aria-expanded="false" data-idx="${i}" data-method="${esc(r.method)}" data-key="${esc(rowKey(id, r.method, r.name))}">
           <td class="col-rank">${rankBadge}</td>
           <td class="col-method" colspan="2">
             <div class="cell-method">
@@ -721,12 +957,37 @@
 
     /* ---- interactions ---- */
     tbody.addEventListener("click", (e) => {
-      const rm = e.target.closest(".manual-remove");
-      if (rm) {
+      const editMan = e.target.closest("[data-edit-manual]");
+      if (editMan) {
         e.stopPropagation();
-        manualStore.remove(rm.dataset.id);
-        refreshCurrent();
-        updateExportBtn();
+        openManualDialog(id, { mode: "edit", id: editMan.dataset.editManual });
+        return;
+      }
+      const rmMan = e.target.closest("[data-remove-manual]");
+      if (rmMan) {
+        e.stopPropagation();
+        STORE.remove(rmMan.dataset.removeManual).then(() => {
+          if (refreshCurrent) refreshCurrent();
+          updateSyncStatus();
+          updateExportBtn();
+        });
+        return;
+      }
+      const editOv = e.target.closest("[data-edit-override]");
+      if (editOv) {
+        e.stopPropagation();
+        const [b, m, n] = decodeRowKey(editOv.dataset.editOverride);
+        openManualDialog(b || id, { mode: "override", target: { bench: b, method: m, name: n } });
+        return;
+      }
+      const revOv = e.target.closest("[data-revert-override]");
+      if (revOv) {
+        e.stopPropagation();
+        STORE.remove(revOv.dataset.revertOverride).then(() => {
+          route(); // re-render so the timeline also reflects the reverted value
+          updateSyncStatus();
+          updateExportBtn();
+        });
         return;
       }
       const tr = e.target.closest("tr.row-method");
@@ -813,6 +1074,7 @@
     /* ---- manual entry controls ---- */
     document.getElementById("add-result").addEventListener("click", () => openManualDialog(id));
     document.getElementById("export-json").addEventListener("click", exportManualEntries);
+    updateSyncStatus();
     updateExportBtn();
 
     window.scrollTo(0, 0);
@@ -850,8 +1112,10 @@
           Momentboard ranks methods on temporal sentence grounding and video
           moment retrieval benchmarks. Published scores are as reported by the
           authors of the cited papers — nothing here is re-run or estimated.
-          Numbers you enter by hand are tagged <span class="tag manual">manual</span>
-          and stay in your browser.
+          Numbers you enter by hand are tagged
+          <span class="tag manual">manual</span> and sync to your server;
+          corrections of published values are tagged
+          <span class="tag corrected">corrected</span>.
         </p>
 
         <h2>Where the numbers come from</h2>
@@ -903,20 +1167,30 @@
         <h2>Adding results</h2>
         <p>
           <b>While reading</b> — the <b>Add result</b> button on any benchmark
-          page opens a form for typing scores by hand. Entries are saved in
-          this browser (localStorage), appear on the table tagged
-          <span class="tag manual">manual</span>, and can be removed from the
-          expanded row. Use <b>export JSON</b> next to the button to download
-          them, then merge the rows into <code>js/data.js</code> to publish
-          them on the board.
+          page opens a form for typing scores by hand. Entries sync to the
+          momentboard server (this machine on your Tailscale network) and
+          appear on the table tagged <span class="tag manual">manual</span>.
+          If the server is unreachable the toolbar shows
+          <span class="sync-status"><span class="dot warn"></span>local only</span>
+          and entries stay in this browser until it is reachable again.
         </p>
         <p style="margin-top:12px">
-          To add a published result directly, edit <code>js/data.js</code>
-          (single source of truth), or run the extraction pipeline in
+          <b>Fixing extraction errors</b> — expand any row and choose
+          <b>edit</b> to correct its scores. The fix is stored as an
+          <em>override</em> on the server, layered on top of the published
+          value and tagged <span class="tag corrected">corrected</span>; use
+          <b>revert</b> to go back to the published number. Manual entries can
+          be edited or removed the same way.
+        </p>
+        <p style="margin-top:12px">
+          To publish for everyone, run
+          <code>tools/merge_entries.js</code> — it folds server overrides and
+          manual entries back into <code>js/data.js</code>. You can also add a
+          published result directly by editing <code>js/data.js</code> (single
+          source of truth), or run the extraction pipeline in
           <code>benchmark-extractor/</code> and import its
           <code>summary.csv</code> with
-          <code>tools/import_from_extractor.py</code> — imported rows appear on
-          the benchmark page marked as pending review.
+          <code>tools/import_from_extractor.py</code>.
         </p>
 
         <h2>Sources</h2>
@@ -946,4 +1220,9 @@
 
   navState();
   route();
+  // load server/local entries asynchronously; re-render once synced
+  STORE.init().then(() => {
+    updateSyncStatus();
+    if (refreshCurrent) refreshCurrent();
+  });
 })();
