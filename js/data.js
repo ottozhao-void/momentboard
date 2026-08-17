@@ -694,10 +694,11 @@ window.LEADERBOARD_DATA = {
    "title": "CVA: Context-aware Video-text Alignment for Video Temporal Grounding",
    "venue": "arXiv",
    "year": 2026,
+   "arxiv": "2603.24934",
    "tags": [
-    "vmr"
-   ],
-   "arxiv": "2603.24934"
+    "vmr",
+    "detr"
+   ]
   },
   "distime": {
    "title": "How Should Video-LLMs Output Time? An Analysis of Efficient Temporal Grounding Paradigms (DisTime)",
@@ -744,15 +745,6 @@ window.LEADERBOARD_DATA = {
    "tags": [
     "vmr"
    ]
-  },
-  "off-shelf": {
-   "title": "Zero-Shot Video Moment Retrieval With Off-the-Shelf Models",
-   "venue": "arXiv",
-   "year": 2022,
-   "tags": [
-    "vmr"
-   ],
-   "arxiv": "2211.02178"
   },
   "bg-aware": {
    "title": "Background-aware Language-centric Temporal Grounding",
@@ -1243,6 +1235,18 @@ window.LEADERBOARD_DATA = {
      },
      "setting": "zero-shot",
      "note": "QVHighlights val (Table 12 full validation set)"
+    },
+    {
+     "method": "cva",
+     "values": {
+      "r1@0.5": 70.05,
+      "r1@0.7": 55.32,
+      "map@0.5": 69.49,
+      "map@0.75": 48.45,
+      "map-avg": 47.49
+     },
+     "setting": "fine-tuned",
+     "note": "QVHighlights test, Table 1 (arXiv 2603.24934)"
     }
    ]
   },
@@ -2468,6 +2472,17 @@ window.LEADERBOARD_DATA = {
      },
      "setting": "online",
      "note": "Online VTG (Table 1, w/o future branch)"
+    },
+    {
+     "method": "cva",
+     "values": {
+      "r@0.3": 58.8,
+      "r@0.5": 43.21,
+      "r@0.7": 27.73,
+      "miou": 41.07
+     },
+     "setting": "fine-tuned",
+     "note": "TACoS test, Table 2"
     }
    ]
   },
@@ -2732,14 +2747,6 @@ window.LEADERBOARD_DATA = {
    ]
   },
   {
-   "id": "off-shelf",
-   "code": "image-table",
-   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
-   "benchmarks": [
-    "charades-sta"
-   ]
-  },
-  {
    "id": "bg-aware",
    "code": "bad-download",
    "failReason": "Fetch only returned an arXiv template override page (HTML render unavailable / ID needs verification). Re-fetch via ar5iv.labs.arxiv.org or the venue page.",
@@ -2784,14 +2791,6 @@ window.LEADERBOARD_DATA = {
   },
   {
    "id": "ev-chain",
-   "code": "image-table",
-   "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
-   "benchmarks": [
-    "charades-sta"
-   ]
-  },
-  {
-   "id": "cva",
    "code": "image-table",
    "failReason": "Benchmark table is embedded as an image / math-markup in the arXiv HTML — machine table-extraction found no scores. Use the describe_image tool on the paper's table image to read the numbers, then add the row.",
    "benchmarks": [
