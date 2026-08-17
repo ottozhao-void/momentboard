@@ -23,7 +23,10 @@ python3 -m http.server 8080        # then open http://localhost:8080
 | `index.html` | Single page; all views rendered client-side |
 | `css/style.css` | Design tokens + layout (light, amber accent, mono numerals) |
 | `js/data.js` | **Single source of truth** — benchmarks, methods, results |
-| `js/app.js` | Router, table rendering, sorting, search, expandable rows, manual entry form |
+| `js/app.js` | Router, table rendering, sorting, search, expandable rows, manual entry + correction forms |
+| `server/server.js` | Zero-dependency persistence server (static site + REST API) |
+| `server/entries.json` | Server-side entries/corrections store (atomic writes) |
+| `tools/merge_entries.js` | Fold server entries + corrections back into `js/data.js` |
 | `fonts/` | Self-hosted Space Grotesk + IBM Plex Sans/Mono |
 | `tools/import_from_extractor.py` | Import the extractor's `summary.csv` into the board |
 
@@ -66,11 +69,19 @@ The home page shows the tag distribution across the board.
 ## Adding results
 
 **While reading** — the **Add result** button on any benchmark page opens a
-minimal form for typing scores by hand. Entries are saved in this browser
-(localStorage), appear on the table tagged
-`manual` (dashed amber), and are removed from the expanded row. The
-**export JSON** button next to it downloads the entries so they can be merged
-into `js/data.js` to publish. Published data and private entries never mix.
+minimal form for typing scores by hand. Entries sync to the momentboard
+server (this machine on your Tailscale network, `server/server.js`) and
+appear on the table tagged `manual`. If the server is unreachable the
+browser falls back to localStorage and the toolbar shows `local only`.
+
+**Fixing extraction errors** — expand any row and choose **edit** to correct
+its scores. The fix is stored as an *override* on the server, layered on top
+of the published value and tagged `corrected`; **revert** goes back to the
+published number. Manual entries can be edited or removed the same way.
+
+**Publishing** — run `tools/merge_entries.js` to fold server overrides and
+manual entries back into `js/data.js`, then commit. You can also export a
+JSON snapshot with the **export JSON** button.
 
 **Manually** — edit `js/data.js`:
 
@@ -96,9 +107,21 @@ python3 tools/import_from_extractor.py --csv ../benchmark-extractor/output/summa
 Imported rows appear on the benchmark page under a "pending review" notice —
 the extractor's generic values still need a human to confirm metric and paper.
 
-> The **Add result** form is the lightweight path for papers you're reading by
-> hand: type the scores, save, and later export the JSON to merge into
-> `js/data.js` (or keep them private to this browser).
+## Server & persistence
+
+```bash
+./server/start.sh          # HTTP on 0.0.0.0:8080 (static + API)
+```
+
+The server persists entries/corrections to `server/entries.json` with atomic
+writes. On this machine it runs as a systemd user service
+(`~/.config/systemd/user/momentboard.service`) and is reachable over
+Tailscale at **https://openclaw.tailda1b50.ts.net/momentboard** (via
+`tailscale serve`). The GitHub Pages copy syncs to it over HTTPS/CORS; when
+it can't be reached the app degrades to browser-local storage with a status
+chip in the toolbar.
+
+See `server/README.md` for the API and deployment notes.
 
 ## Validation
 

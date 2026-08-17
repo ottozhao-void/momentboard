@@ -116,3 +116,21 @@ Extract benchmark numbers from papers and land them in `js/data.js` as follows
   `image-table`, `bad-download`, `no-arxiv`, `wrong-match`.
 - `wrong-match` entries must keep `benchmarks: []` (they never enter a table);
   `tinyvim` is the canonical example.
+
+# Manual entry channel (server-synced edits)
+
+Separate from the extraction pipeline, the UI offers manual entry and
+correction of numbers (see README "Adding results"):
+
+- **Add result** creates a `manual` entry; **edit** on any row creates an
+  `override` of a published value. Both are stored on the momentboard server
+  (`server/server.js`, Tailscale) in `server/entries.json`, and are layered on
+  top of `data.js` at render time — `data.js` is never rewritten from the UI.
+- When the server is unreachable the app falls back to localStorage
+  (`momentboard:manual:v2`) and shows `local only` in the toolbar.
+- **Publish corrections:** run `node tools/merge_entries.js` to fold
+  `server/entries.json` overrides + manual rows into `js/data.js`, validate
+  with `node tools/validate_data.js`, and commit. Merging re-serializes the
+  file (whole values like `35.0` normalize to `35`).
+- The home page and benchmark timelines show published values + overrides;
+  they intentionally exclude pure `manual` scratch rows.
