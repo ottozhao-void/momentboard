@@ -83,16 +83,26 @@ function save() {
 
 function corsHeaders(req) {
   const origin = req.headers.origin;
-  const allow = CORS_ORIGINS.includes("*")
-    ? "*"
-    : (origin && CORS_ORIGINS.includes(origin)) ? origin : "";
-  return {
+  let allow;
+  if (CORS_ORIGINS.includes("*")) {
+    // echo the caller's origin so PNA preflights never see a wildcard
+    allow = origin || "*";
+  } else {
+    allow = (origin && CORS_ORIGINS.includes(origin)) ? origin : "";
+  }
+  const headers = {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
     "Cache-Control": "no-store"
   };
+  // Private Network Access: a public origin (GitHub Pages) calling this
+  // Tailscale/private address must pass a PNA preflight; permit it.
+  if (req.headers["access-control-request-private-network"] === "true") {
+    headers["Access-Control-Allow-Private-Network"] = "true";
+  }
+  return headers;
 }
 
 function sendJson(res, status, obj, cors) {

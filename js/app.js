@@ -1183,6 +1183,15 @@
           be edited or removed the same way.
         </p>
         <p style="margin-top:12px">
+          <b>Where to edit</b> — use the tailnet URL
+          <code>https://openclaw.tailda1b50.ts.net/momentboard</code> (or
+          <code>http://openclaw:8080</code>) for full syncing. The public
+          GitHub Pages copy also syncs when the browser permits it; Chrome's
+          local-network security may block it, in which case the toolbar shows
+          <span class="sync-status"><span class="dot warn"></span>local only</span>
+          and edits stay in that browser.
+        </p>
+        <p style="margin-top:12px">
           To publish for everyone, run
           <code>tools/merge_entries.js</code> — it folds server overrides and
           manual entries back into <code>js/data.js</code>. You can also add a

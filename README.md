@@ -118,8 +118,10 @@ writes. On this machine it runs as a systemd user service
 (`~/.config/systemd/user/momentboard.service`) and is reachable over
 Tailscale at **https://openclaw.tailda1b50.ts.net/momentboard** (via
 `tailscale serve`). The GitHub Pages copy syncs to it over HTTPS/CORS; when
-it can't be reached the app degrades to browser-local storage with a status
-chip in the toolbar.
+it can't be reached (off-network, or Chrome's local-network security blocks
+the public→private call) the app degrades to browser-local storage with a
+status chip in the toolbar. For the full syncing experience, use the tailnet
+URL above as your editing home.
 
 See `server/README.md` for the API and deployment notes.
 
