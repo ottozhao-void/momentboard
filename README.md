@@ -23,7 +23,7 @@ python3 -m http.server 8080        # then open http://localhost:8080
 | `index.html` | Single page; all views rendered client-side |
 | `css/style.css` | Design tokens + layout (light, amber accent, mono numerals) |
 | `js/data.js` | **Single source of truth** — benchmarks, methods, results |
-| `js/app.js` | Router, table rendering, sorting, search, expandable rows |
+| `js/app.js` | Router, table rendering, sorting, search, expandable rows, manual entry form |
 | `fonts/` | Self-hosted Space Grotesk + IBM Plex Sans/Mono |
 | `tools/import_from_extractor.py` | Import the extractor's `summary.csv` into the board |
 
@@ -65,6 +65,13 @@ The home page shows the tag distribution across the board.
 
 ## Adding results
 
+**While reading** — the **Add result** button on any benchmark page opens a
+minimal form for typing scores by hand. Entries are saved in this browser
+(localStorage), appear on the table tagged
+`manual` (dashed amber), and are removed from the expanded row. The
+**export JSON** button next to it downloads the entries so they can be merged
+into `js/data.js` to publish. Published data and private entries never mix.
+
 **Manually** — edit `js/data.js`:
 
 ```js
@@ -88,6 +95,10 @@ python3 tools/import_from_extractor.py --csv ../benchmark-extractor/output/summa
 
 Imported rows appear on the benchmark page under a "pending review" notice —
 the extractor's generic values still need a human to confirm metric and paper.
+
+> The **Add result** form is the lightweight path for papers you're reading by
+> hand: type the scores, save, and later export the JSON to merge into
+> `js/data.js` (or keep them private to this browser).
 
 ## Validation
 

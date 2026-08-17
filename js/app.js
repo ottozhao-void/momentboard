@@ -153,6 +153,266 @@
     });
   }
 
+  /* ---------------------------------------------------------- manual entry */
+
+  const MANUAL_KEY = "momentboard:manual:v1";
+
+  const manualStore = {
+    entries: [],
+    load() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(MANUAL_KEY) || "null");
+        this.entries = raw && Array.isArray(raw.entries) ? raw.entries : [];
+      } catch (e) { this.entries = []; }
+    },
+    persist() {
+      try {
+        localStorage.setItem(MANUAL_KEY, JSON.stringify({ version: 1, entries: this.entries }));
+      } catch (e) {}
+    },
+    add(entry) {
+      const id = "m-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6);
+      this.entries.push(Object.assign({ id }, entry));
+      this.persist();
+      return id;
+    },
+    remove(id) {
+      this.entries = this.entries.filter((e) => e.id !== id);
+      this.persist();
+    }
+  };
+  manualStore.load();
+
+  // manual entries -> row shape, sanitized against the benchmark's metric ids
+  function manualRowsFor(benchId) {
+    const bench = DATA.benchmarks.find((b) => b.id === benchId);
+    const ids = new Set((bench ? bench.metrics : []).map((m) => m.id));
+    return manualStore.entries
+      .filter((e) => e.benchmark === benchId)
+      .map((e) => ({
+        method: e.id,
+        name: e.method,
+        values: Object.fromEntries(Object.entries(e.values || {})
+          .filter(([k, v]) => ids.has(k) && typeof v === "number")),
+        setting: e.setting === "zero-shot" || e.setting === "fine-tuned" ? e.setting : "",
+        note: e.note || "",
+        paper: e.paper || "",
+        added: e.added || "",
+        manual: true
+      }));
+  }
+
+  // bare arXiv ids ("2404.00801" / "arXiv:2404.00801") become links
+  function manualPaperLink(paper) {
+    const m = String(paper).trim().match(/^(?:arxiv\s*[:#]?\s*)?(\d{4}\.\d{4,5})$/i);
+    return m
+      ? `<a href="https://arxiv.org/abs/${m[1]}" target="_blank" rel="noopener">arXiv:${m[1]} ↗</a>`
+      : esc(paper);
+  }
+
+  function exportManualEntries() {
+    const payload = {
+      app: "momentboard",
+      version: 1,
+      exported: new Date().toISOString().slice(0, 10),
+      note: "Manual entries from the Add result form. Merge the rows into js/data.js to publish.",
+      entries: manualStore.entries
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "momentboard-manual-entries.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+
+  let refreshCurrent = null; // set by renderBenchmark; redraws the live table
+  let manualDialog = null;
+
+  function buildManualDialog() {
+    const dlg = document.createElement("dialog");
+    dlg.className = "modal";
+    dlg.setAttribute("aria-labelledby", "manual-title");
+    dlg.innerHTML = `
+    <div class="modal-card">
+      <header class="modal-head">
+        <div>
+          <p class="modal-eyebrow">Manual entry · this browser only</p>
+          <h2 class="modal-title" id="manual-title">Add a result</h2>
+        </div>
+        <button type="button" class="modal-close" aria-label="Close">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+      <form class="modal-body" id="manual-form" novalidate>
+        <div class="field">
+          <label for="m-method">Method name <span class="req">*</span></label>
+          <input id="m-method" placeholder="e.g. MyMethod-7B" autocomplete="off">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="m-bench">Benchmark</label>
+            <select id="m-bench">
+              ${DATA.benchmarks.map((b) => `<option value="${esc(b.id)}">${esc(b.name)} · ${esc(b.split)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <span class="field-label" id="m-seg-label">Setting</span>
+            <div class="seg" role="group" aria-labelledby="m-seg-label">
+              <button type="button" aria-pressed="true" data-setting="fine-tuned">fine-tuned</button>
+              <button type="button" aria-pressed="false" data-setting="zero-shot">zero-shot</button>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="m-paper">Paper / source <span class="opt">optional</span></label>
+          <input id="m-paper" placeholder="arXiv:XXXX.XXXXX, a title or a URL" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="m-note">Note <span class="opt">optional</span></label>
+          <input id="m-note" placeholder="e.g. Table 3 · val split · CLIP backbone" autocomplete="off">
+        </div>
+        <div class="scores">
+          <div class="scores-head">
+            <p class="scores-label" id="m-scores-title"></p>
+            <p class="scores-hint">blank = not reported</p>
+          </div>
+          <div class="scores-grid" id="m-scores-grid"></div>
+        </div>
+        <p class="form-error" id="m-error" hidden></p>
+      </form>
+      <footer class="modal-foot">
+        <button type="button" class="btn btn-ghost" id="m-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" form="manual-form">Save entry</button>
+      </footer>
+    </div>`;
+    document.body.appendChild(dlg);
+
+    const form = dlg.querySelector("#manual-form");
+    const methodInput = form.querySelector("#m-method");
+    const benchSel = form.querySelector("#m-bench");
+    const seg = form.querySelector(".seg");
+    const paperInput = form.querySelector("#m-paper");
+    const noteInput = form.querySelector("#m-note");
+    const scoresTitle = form.querySelector("#m-scores-title");
+    const scoresGrid = form.querySelector("#m-scores-grid");
+    const errorEl = form.querySelector("#m-error");
+
+    function renderScores(benchId) {
+      const bench = DATA.benchmarks.find((b) => b.id === benchId);
+      scoresTitle.textContent = `Scores · ${bench.name} (${bench.split})`;
+      const groups = [];
+      for (const m of bench.metrics) if (!groups.includes(m.group)) groups.push(m.group);
+      scoresGrid.innerHTML = groups.map((g) => `
+        <p class="score-group">${esc(g)}</p>
+        ${bench.metrics.filter((m) => m.group === g).map((m) => `
+          <label class="score-field">
+            <span>${esc(m.label)}</span>
+            <input type="text" inputmode="decimal" placeholder="–" data-metric="${esc(m.id)}" autocomplete="off">
+          </label>`).join("")}
+      `).join("");
+    }
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.hidden = false;
+    }
+
+    function resetForm() {
+      form.reset();
+      errorEl.hidden = true;
+      errorEl.textContent = "";
+      methodInput.removeAttribute("aria-invalid");
+      seg.querySelectorAll("button").forEach((b) =>
+        b.setAttribute("aria-pressed", String(b.dataset.setting === "fine-tuned")));
+      renderScores(benchSel.value);
+    }
+
+    const closeDialog = () => {
+      if (typeof dlg.close === "function" && dlg.open) dlg.close();
+      else dlg.removeAttribute("open");
+    };
+
+    benchSel.addEventListener("change", () => { errorEl.hidden = true; renderScores(benchSel.value); });
+
+    seg.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-setting]");
+      if (!btn) return;
+      seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+    });
+
+    dlg.querySelector(".modal-close").addEventListener("click", closeDialog);
+    dlg.querySelector("#m-cancel").addEventListener("click", closeDialog);
+    dlg.addEventListener("click", (e) => { if (e.target === dlg) closeDialog(); });
+    dlg.addEventListener("close", resetForm);
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = methodInput.value.trim();
+      if (!name) {
+        showError("Give the method a name.");
+        methodInput.setAttribute("aria-invalid", "true");
+        methodInput.focus();
+        return;
+      }
+      methodInput.removeAttribute("aria-invalid");
+      const values = {};
+      let bad = null;
+      for (const inp of scoresGrid.querySelectorAll("input[data-metric]")) {
+        const raw = inp.value.trim();
+        if (!raw) continue;
+        const n = Number(raw);
+        if (!Number.isFinite(n) || n < 0 || n > 100) {
+          bad = inp;
+          inp.setAttribute("aria-invalid", "true");
+          continue;
+        }
+        inp.removeAttribute("aria-invalid");
+        values[inp.dataset.metric] = n;
+      }
+      if (bad) {
+        showError(`“${bad.closest(".score-field").querySelector("span").textContent}” must be a number from 0 to 100.`);
+        bad.focus();
+        return;
+      }
+      const entryId = manualStore.add({
+        benchmark: benchSel.value,
+        method: name,
+        setting: seg.querySelector("button[aria-pressed='true']").dataset.setting,
+        paper: paperInput.value.trim(),
+        note: noteInput.value.trim(),
+        values,
+        added: new Date().toISOString().slice(0, 10)
+      });
+      closeDialog(); // triggers resetForm via the close event
+      if (refreshCurrent) refreshCurrent();
+      updateExportBtn();
+      const tr = document.querySelector(`tr.row-method[data-method="${entryId}"]`);
+      if (tr) {
+        tr.classList.add("flash");
+        tr.scrollIntoView({ block: "center" });
+      }
+    });
+
+    dlg._selectBench = (id) => { benchSel.value = id; renderScores(id); };
+    return dlg;
+  }
+
+  function openManualDialog(benchId) {
+    if (!manualDialog) manualDialog = buildManualDialog();
+    manualDialog._selectBench(benchId);
+    if (typeof manualDialog.showModal === "function") manualDialog.showModal();
+    else manualDialog.setAttribute("open", "");
+    manualDialog.querySelector("#m-method").focus();
+  }
+
+  function updateExportBtn() {
+    const btn = document.getElementById("export-json");
+    if (btn) btn.hidden = manualStore.entries.length === 0;
+  }
+
   /* ---------------------------------------------------------- home */
 
   function renderHome() {
@@ -259,10 +519,12 @@
     const gapRows = (DATA.unavailable || [])
       .filter((u) => u.benchmarks.includes(id))
       .map((u) => ({ method: u.id, values: {}, failed: u.code, note: u.failReason }));
-    let rows = sortRows(bench.rows.concat(gapRows), st.sortMetric, st.dir);
+    const computeRows = () => sortRows(bench.rows.concat(gapRows, manualRowsFor(id)), st.sortMetric, st.dir);
+    let rows = computeRows();
     const gapCount = gapRows.length;
     let searchTerm = "";
     const imported = (DATA.imported || []).filter((r) => r.benchmark === id);
+    refreshCurrent = () => { rows = computeRows(); drawTable(); };
 
     /* ---- timeline ---- */
     const maxV = Math.max(...bench.rows.map((r) => r.values[pm.id] || 0));
@@ -355,7 +617,14 @@
             <span class="search-icon" aria-hidden="true">⌕</span>
             <input type="search" id="search" placeholder="Filter methods…" aria-label="Filter methods">
           </div>
-          <span class="result-count" id="result-count"></span>
+          <div class="toolbar-actions">
+            <span class="result-count" id="result-count"></span>
+            <button type="button" class="btn btn-ghost" id="export-json" hidden>export JSON</button>
+            <button type="button" class="btn btn-primary" id="add-result">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              Add result
+            </button>
+          </div>
         </section>
         <section class="tagbar" id="tagbar" aria-label="Filter by tag"></section>
         <div class="gaps" id="gaps"></div>
@@ -395,6 +664,7 @@
         if (r.size) tags.push(esc(r.size));
         if (r.setting) tags.push(`<span class="tag ${esc(r.setting)}">${esc(r.setting)}</span>`);
         if (paper) tags.push(`<span class="tag venue">${esc(paper.venue)} ${paper.year}</span>`);
+        if (r.manual) tags.push(`<span class="tag manual">manual</span>`);
         if (r.failed) tags.push(`<span class="tag failed">⚠ no numbers — pending</span>`);
         for (const t of TAG_ORDER) {
           if (!methodTags(r.method).includes(t)) continue;
@@ -410,8 +680,17 @@
         const rankBadge = rank <= 3
           ? `<span class="rank-badge rank-${rank}">${rank}</span>`
           : `<span class="rank-badge">${rank}</span>`;
+        const paperHtml = r.manual
+          ? `<div class="paper">
+              <div class="paper-title">${esc(methodName(r))} — manual entry</div>
+              <div class="paper-meta">${r.paper ? manualPaperLink(r.paper) + " · " : ""}added ${esc(fmtDate(r.added))}${r.note ? " · " + esc(r.note) : ""} · <button type="button" class="manual-remove" data-id="${esc(r.method)}">remove entry</button></div>
+            </div>`
+          : `<div class="paper">
+              <div class="paper-title">${esc(paper ? paper.title : "Paper details unavailable")}</div>
+              <div class="paper-meta">${esc(paperLink(paper))}${r.note ? " · " + esc(r.note) : ""}${paper && paper.arxiv ? ` · <a href="https://arxiv.org/abs/${esc(paper.arxiv)}" target="_blank" rel="noopener">open paper ↗</a>` : ""}</div>
+            </div>`;
         return `
-        <tr class="row-method" role="button" tabindex="0" aria-expanded="false" data-idx="${i}">
+        <tr class="row-method" role="button" tabindex="0" aria-expanded="false" data-idx="${i}" data-method="${esc(r.method)}">
           <td class="col-rank">${rankBadge}</td>
           <td class="col-method" colspan="2">
             <div class="cell-method">
@@ -423,12 +702,7 @@
           ${metricCells}
         </tr>
         <tr class="row-paper" hidden>
-          <td colspan="${metricCols}">
-            <div class="paper">
-              <div class="paper-title">${esc(paper ? paper.title : "Paper details unavailable")}</div>
-              <div class="paper-meta">${esc(paperLink(paper))}${r.note ? " · " + esc(r.note) : ""}${paper && paper.arxiv ? ` · <a href="https://arxiv.org/abs/${esc(paper.arxiv)}" target="_blank" rel="noopener">open paper ↗</a>` : ""}</div>
-            </div>
-          </td>
+          <td colspan="${metricCols}">${paperHtml}</td>
         </tr>`;
       }).join("");
     }
@@ -447,6 +721,14 @@
 
     /* ---- interactions ---- */
     tbody.addEventListener("click", (e) => {
+      const rm = e.target.closest(".manual-remove");
+      if (rm) {
+        e.stopPropagation();
+        manualStore.remove(rm.dataset.id);
+        refreshCurrent();
+        updateExportBtn();
+        return;
+      }
       const tr = e.target.closest("tr.row-method");
       if (tr) toggleRow(tr);
     });
@@ -469,7 +751,7 @@
         const m = th.dataset.metric;
         st.dir = st.sortMetric === m && st.dir === "desc" ? "asc" : "desc";
         st.sortMetric = m;
-        rows = sortRows(bench.rows, st.sortMetric, st.dir);
+        rows = computeRows();
         drawTable();
         // update aria-sort markers
         document.querySelectorAll("th[data-metric]").forEach((h) => {
@@ -528,6 +810,11 @@
         </div>`;
     }
 
+    /* ---- manual entry controls ---- */
+    document.getElementById("add-result").addEventListener("click", () => openManualDialog(id));
+    document.getElementById("export-json").addEventListener("click", exportManualEntries);
+    updateExportBtn();
+
     window.scrollTo(0, 0);
   }
 
@@ -561,8 +848,10 @@
         <h1>Every number points to a paper.</h1>
         <p class="lede">
           Momentboard ranks methods on temporal sentence grounding and video
-          moment retrieval benchmarks. All scores are as reported by the
+          moment retrieval benchmarks. Published scores are as reported by the
           authors of the cited papers — nothing here is re-run or estimated.
+          Numbers you enter by hand are tagged <span class="tag manual">manual</span>
+          and stay in your browser.
         </p>
 
         <h2>Where the numbers come from</h2>
@@ -613,10 +902,21 @@
 
         <h2>Adding results</h2>
         <p>
-          Edit <code>js/data.js</code> (single source of truth), or run the
-          extraction pipeline in <code>benchmark-extractor/</code> and import its
-          <code>summary.csv</code> with <code>tools/import_from_extractor.py</code> —
-          imported rows appear on the benchmark page marked as pending review.
+          <b>While reading</b> — the <b>Add result</b> button on any benchmark
+          page opens a form for typing scores by hand. Entries are saved in
+          this browser (localStorage), appear on the table tagged
+          <span class="tag manual">manual</span>, and can be removed from the
+          expanded row. Use <b>export JSON</b> next to the button to download
+          them, then merge the rows into <code>js/data.js</code> to publish
+          them on the board.
+        </p>
+        <p style="margin-top:12px">
+          To add a published result directly, edit <code>js/data.js</code>
+          (single source of truth), or run the extraction pipeline in
+          <code>benchmark-extractor/</code> and import its
+          <code>summary.csv</code> with
+          <code>tools/import_from_extractor.py</code> — imported rows appear on
+          the benchmark page marked as pending review.
         </p>
 
         <h2>Sources</h2>
